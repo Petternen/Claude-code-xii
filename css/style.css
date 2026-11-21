@@ -525,3 +525,160 @@ main { max-width: 1000px; margin: 0 auto; padding: 1.6rem 16px; }
   .key { width: 28px; height: 40px; font-size: .95rem; } .key small { display: none; } .key.space { width: 200px; }
   .kb-row { gap: .2rem; } .kb-word { font-size: 1.8rem; }
 }
+
+/* =====================================================================
+   MOBIL-FØRST: bunnmeny, faste handlingsknapper, svar-ark og trykkflater
+   ===================================================================== */
+:root { --tabbar-h: 62px; --safe-b: env(safe-area-inset-bottom, 0px); }
+html { -webkit-tap-highlight-color: transparent; }
+body { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 8px); overscroll-behavior-y: none; }
+body.immersive { padding-bottom: calc(var(--safe-b) + 12px); }
+button, .btn, .node, .opt, .tok, .key, .letter, .vcard, .line, .sline, .flash, .srow, .nav { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+main { max-width: 720px; padding: 1rem 16px; }
+#keys { display: none; }
+
+/* Toppfelt: logo + status på én linje */
+#topbar { gap: .6rem; padding: calc(.45rem + env(safe-area-inset-top, 0px)) 14px .45rem; }
+#topbar nav { display: none; }
+.logo small { display: none; }
+.hud { margin-left: auto; gap: .55rem; }
+.lvlbar { display: none; }
+body.immersive .logo b { font-size: 1rem; }
+
+/* Bunnmeny (tab bar) */
+#tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: flex; justify-content: center;
+  height: calc(var(--tabbar-h) + var(--safe-b)); padding-bottom: var(--safe-b);
+  background: var(--paper); border-top: 2px solid var(--line); box-shadow: 0 -4px 14px rgba(0, 0, 0, .08);
+}
+body.immersive #tabbar { display: none; }
+#tabbar .nav {
+  flex: 1; max-width: 144px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--muted); text-decoration: none; font-size: .7rem; font-weight: 700; border-radius: 0; padding: 4px 0;
+}
+#tabbar .nav .ni { position: relative; font-size: 1.35rem; line-height: 1; }
+#tabbar .nav.on { color: var(--red); background: none; }
+#tabbar .nav.on .ni { transform: translateY(-1px) scale(1.08); }
+#tabbar .pill { position: absolute; top: -6px; right: -14px; font-size: .62rem; }
+[data-skin="sov"] #tabbar { background: #141414; border-top: 6px solid var(--red); }
+[data-skin="sov"] #tabbar .nav { color: #bdb7ad; text-transform: uppercase; } [data-skin="sov"] #tabbar .nav.on { color: var(--gold); }
+[data-skin="leet"] #tabbar { background: #000; border-top: 1px solid var(--gold); box-shadow: 0 0 16px rgba(0, 240, 255, .3); }
+[data-skin="leet"] #tabbar .nav.on { color: var(--gold); text-shadow: 0 0 6px var(--gold); }
+
+/* Leksjonshode og faner som rullbare «chips» */
+.lesson-head { padding: 1.1rem .9rem .8rem; gap: .7rem; }
+.lesson-head h1 { font-size: 1.35rem; }
+.lesson-head p { font-size: .85rem; }
+.back { width: 2.4rem; height: 2.4rem; font-size: 1.1rem; text-decoration: none; color: var(--ink); }
+.lh-icon { font-size: 2rem; }
+.tabs, .tabs.six { display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; margin: .8rem -16px; padding: 0 16px 4px; scroll-snap-type: x proximity; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: 0 0 auto; flex-direction: row; gap: .35rem; padding: .5rem .85rem; border-radius: 999px; scroll-snap-align: start; font-size: .88rem; }
+.tab span { font-size: 1rem; }
+.tab small { display: none; }
+.tab.done i { position: static; }
+.tab.on { box-shadow: none; background: var(--red); border-color: var(--red); color: #fff; }
+
+/* Faste handlingsknapper nederst (tommelsone) */
+.sec-foot.cta {
+  position: sticky; bottom: 0; z-index: 12; margin: 1.2rem -16px 0; padding: 14px 16px calc(14px + var(--safe-b));
+  background: linear-gradient(to bottom, transparent, var(--bg) 35%);
+}
+.sec-foot.cta .btn, .row.stack .btn { width: 100%; justify-content: center; }
+.row.stack { flex-direction: column; align-items: stretch; }
+.btn.big { min-height: 54px; font-size: 1.08rem; }
+.btn { min-height: 44px; justify-content: center; }
+.icon { width: 2.8rem; height: 2.8rem; font-size: 1.15rem; }
+.center { text-align: center; }
+
+/* Svar-ark som glir opp nederst (quiz og lesetekst) */
+.feedback.show {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; margin: 0; flex-direction: column; align-items: stretch; gap: .7rem;
+  padding: 18px 16px calc(16px + var(--safe-b)); border-radius: 20px 20px 0 0; border-width: 0; border-top-width: 3px;
+  background: var(--paper); box-shadow: 0 -8px 24px rgba(0, 0, 0, .18); animation: sheetup .22s ease-out;
+}
+.feedback.show .btn { width: 100%; }
+.feedback.good { background: color-mix(in srgb, var(--good) 14%, var(--paper)); }
+.feedback.bad { background: color-mix(in srgb, var(--bad) 12%, var(--paper)); }
+@keyframes sheetup { from { transform: translateY(100%); } }
+.quiz { padding-bottom: 150px; }
+
+/* Quiz, skrivefelt og ordrekkefølge */
+.opts { grid-template-columns: 1fr; }
+.opt { min-height: 58px; font-size: 1.05rem; }
+.qform { display: flex; gap: .5rem; align-items: stretch; flex: 1; flex-wrap: wrap; }
+.qform .answer { flex: 1 1 200px; font-size: 1.1rem; }
+.qcard .qform .btn { flex: 1 1 100%; }
+.tok { min-height: 48px; }
+.built .tok.in { cursor: pointer; }
+.listenbtn { width: 100%; }
+
+/* Samtale: kontrollpanel festet nederst */
+.rp-controls { position: sticky; bottom: calc(var(--safe-b)); border-radius: 20px 20px 0 0; margin: 0 -16px; padding: 12px 16px calc(12px + var(--safe-b)); }
+.rp-controls .row { flex-wrap: nowrap; }
+.mic { flex: none; width: 60px; height: 60px; }
+.small-btns { flex-wrap: wrap !important; gap: .35rem; }
+.small-btns .btn { flex: 1 1 calc(50% - .35rem); min-height: 40px; }
+.rp-intro { flex-direction: column; text-align: center; }
+.rp-intro .btn { width: 100%; }
+
+/* Repetisjon */
+.flash { min-height: 260px; }
+.grades { grid-template-columns: 1fr 1fr; }
+.grades .btn { min-height: 56px; }
+
+/* Kart og innhold i smal kolonne */
+.hero { grid-template-columns: 1fr; padding: 1.4rem 1.1rem 1.1rem; }
+.hero-actions { align-items: stretch; }
+.hero-actions .btn { width: 100%; }
+.stop { padding-left: calc(var(--x) * 14%); }
+.node { width: 76px; height: 76px; }
+.node.boss { width: 92px; height: 92px; }
+.vocab { grid-template-columns: 1fr; }
+.alpha { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+.helpgrid { display: none; }
+
+/* Tastaturtrener: trykkbart ЙЦУКЕН som fyller bredden */
+.kb { width: 100%; }
+.kb-row { width: 100%; justify-content: center; gap: 4px; }
+.key { flex: 1 1 0; max-width: 52px; min-width: 0; height: 50px; padding: 0; font: 700 1.15rem var(--font-body); color: var(--ink); cursor: pointer; }
+.key:active { transform: translateY(2px); box-shadow: none; }
+
+/* Ingen hover-effekter på berøringsskjerm */
+@media (hover: none) {
+  .btn:hover, .node:hover { transform: none; box-shadow: inherit; }
+  .opt:hover:not(:disabled) { border-color: var(--line); }
+}
+.btn:active, .opt:active, .tok:active, .vcard:active, .line:active { transform: scale(.98); }
+
+@media (min-width: 761px) {
+  #tabbar .nav { font-size: .78rem; }
+  .vocab { grid-template-columns: 1fr 1fr; }
+}
+#tabbar .nav .nl { display: block !important; }
+.levelbanner {
+  position: fixed; top: calc(70px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 80; pointer-events: none;
+  display: flex; align-items: center; gap: .7rem; padding: .7rem 1.2rem; border-radius: 18px; min-width: 260px;
+  background: var(--red); color: #fff; border: 3px solid var(--gold); box-shadow: var(--shadow); animation: pop .3s; transition: opacity .4s;
+}
+.levelbanner .burst { font-size: 2rem; }
+.levelbanner small { display: block; opacity: .9; }
+.levelbanner.out { opacity: 0; }
+/* Mobil: små, sentrerte toasts som ikke dekker innholdet */
+#toasts { top: calc(64px + env(safe-area-inset-top, 0px)); right: 0; left: 0; align-items: center; }
+.toast { font-size: .85rem; padding: .35rem .85rem; max-width: calc(100vw - 32px); }
+.toast.out { transform: translateY(-12px); }
+#topbar { flex-wrap: nowrap; }
+.logo b { white-space: nowrap; }
+[data-skin="leet"] .logo b { font-size: .7rem; }
+@media (max-width: 360px) { .logo b { display: none; } }
+.silentbtn { margin-left: auto; order: 3; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 2px solid var(--line); background: var(--paper-2); font-size: 1.15rem; cursor: pointer; }
+.silentbtn.on { border-color: var(--gold); background: var(--gold-soft); }
+.lesson-head .lh-title { flex: 1; min-width: 0; }
+.cantbtn { width: 100%; margin: -.4rem 0 1rem; font-size: .9rem; }
+.order-btns { display: grid; grid-template-columns: 1fr 2fr; gap: .5rem; margin-top: .9rem; }
+.order-btns .btn { width: 100%; }
+/* Ordrekkefølge: ordbrikker side om side (som i mobilapper), så Sjekk-knappen er synlig */
+.opts.tokens { display: flex; flex-wrap: wrap; gap: .5rem; }
+.opts.tokens .tok, .built .tok { flex: 0 0 auto; padding: .55rem .9rem; font-size: 1.1rem; }
+.built { min-height: 3.6rem; align-content: flex-start; }

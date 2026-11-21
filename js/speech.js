@@ -10,6 +10,13 @@ RP.speech = (() => {
     window.claude.use('dictation').then(d => { if (d) dict = d; }).catch(() => { });
     window.claude.use('tts').then(t => { if (t) ttsC = t; }).catch(() => { });
   }
+  // iOS/Safari spiller bare lyd som starter i et trykk: lås opp tale og lyd ved første berøring
+  const unlock = () => {
+    try { if (synth) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; synth.speak(u); } } catch (e) { }
+    try { const a = new Audio(); a.muted = true; a.play().catch(() => { }); } catch (e) { }
+    RP.unlockAudio && RP.unlockAudio();
+  };
+  ['touchend', 'click'].forEach(ev => document.addEventListener(ev, unlock, { once: true, capture: true }));
   const recorded = text => RP.AUDIO && RP.AUDIO[RP.audioKey(text)];
   const playFile = (url, slow) => new Promise(res => {
     audioEl = new Audio(url); audioEl.playbackRate = slow ? 0.75 : 1;
@@ -49,7 +56,8 @@ RP.speech = (() => {
     recorded,
     get sttOK() { return !!SR || !!dict; },
     /* Prioritet: innspilt morsmålsopptak → Claude-stemme (i Artifact) → nettleserens stemme. */
-    async speak(text, { gender = 'f', slow = false } = {}) {
+    async speak(text, { gender = 'f', slow = false, auto = false } = {}) {
+      if (auto && RP.silent()) return; // automatisk opplesning er av i lydfri modus
       text = RP.unstress(text);
       const mode = RP.state.settings.voice, my = ++busy;
       try {
