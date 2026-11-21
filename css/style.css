@@ -672,3 +672,9 @@ body.immersive #tabbar { display: none; }
 .logo b { white-space: nowrap; }
 [data-skin="leet"] .logo b { font-size: .7rem; }
 @media (max-width: 360px) { .logo b { display: none; } }
+.silentbtn { margin-left: auto; order: 3; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 50%; border: 2px solid var(--line); background: var(--paper-2); font-size: 1.15rem; cursor: pointer; }
+.silentbtn.on { border-color: var(--gold); background: var(--gold-soft); }
+.lesson-head .lh-title { flex: 1; min-width: 0; }
+.cantbtn { width: 100%; margin: -.4rem 0 1rem; font-size: .9rem; }
+.order-btns { display: grid; grid-template-columns: 1fr 2fr; gap: .5rem; margin-top: .9rem; }
+.order-btns .btn { width: 100%; }

@@ -63,7 +63,7 @@ const DEFAULT = () => ({
   xp: 0, daily: { date: RP.today(), xp: 0 }, streak: { count: 0, last: null }, dailyGoal: 50,
   lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 },
   stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0, chats: 0 },
-  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus', stress: true, voice: 'auto' }
+  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus', stress: true, voice: 'auto', silent: false, silentUntil: 0 }
 });
 RP.load = () => {
   let s = null;
@@ -217,8 +217,12 @@ RP.srsGrade = (ru, g) => { // g: 1 igjen, 2 vanskelig, 3 bra, 4 lett
 
 /* ---------- Lydeffekter (WebAudio) ---------- */
 let actx;
+RP.unlockAudio = () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) { } };
+/* Lydfri modus: fast innstilling, eller «Kan ikke lytte nå» i én time. */
+RP.silent = () => !!RP.state.settings.silent || Date.now() < (RP.state.settings.silentUntil || 0);
+RP.setSilent = on => { RP.state.settings.silent = on; if (!on) RP.state.settings.silentUntil = 0; RP.save(); };
 RP.sfx = type => {
-  if (!RP.state.settings.sound) return;
+  if (!RP.state.settings.sound || RP.silent()) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     const seq = { ok: [[660, .08], [880, .12]], bad: [[220, .18]], level: [[523, .1], [659, .1], [784, .1], [1047, .25]], badge: [[784, .1], [988, .1], [1319, .2]], click: [[440, .04]] }[type] || [];

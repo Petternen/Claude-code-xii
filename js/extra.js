@@ -119,7 +119,7 @@
       const need = c.w[this.typed.length];
       if (ch === need || (need === 'ё' && ch === 'е')) {
         this.typed += need; this.chars++; el && el.classList.add('ok');
-        if (this.typed === c.w) { RP.sfx('ok'); say(c.w); this.i++; this.typed = ''; RP.state.kb.words++; }
+        if (this.typed === c.w) { RP.sfx('ok'); say(c.w, { auto: true }); this.i++; this.typed = ''; RP.state.kb.words++; }
       } else { this.err++; RP.sfx('bad'); el && el.classList.add('bad'); }
       setTimeout(() => el && el.classList.remove('ok', 'bad'), 180);
       this.show();
@@ -306,7 +306,7 @@ Svar KUN med JSON: {"ru": "din replikk på russisk", "no": "norsk oversettelse a
         this.msgs.push({ role: 'bot', text: r.ru });
         this.bubble('bot', `<div class="ru">${E(r.ru)}</div>${tr(r.ru)}<div class="no" hidden>${E(r.no || '')}</div>`);
         q('#rpc').hidden = false;
-        say(r.ru, { gender: RP.GENDER[this.L.rp.bot] || 'f' });
+        say(r.ru, { gender: RP.GENDER[this.L.rp.bot] || 'f', auto: true });
       } catch (e) {
         wait.remove();
         const c = e && e.code;

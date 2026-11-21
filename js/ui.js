@@ -152,6 +152,7 @@ RP.views.lesson = {
       <header class="lesson-head ornament">
         <a class="back" href="#/map" aria-label="Lukk leksjonen">✕</a>
         <div class="lh-icon">${L.icon}</div>
+        <button class="silentbtn ${RP.silent() ? 'on' : ''}" data-act="silent" aria-label="Lydfri modus">${RP.silent() ? '🔇' : '🔊'}</button>
         <div class="lh-title"><h1>${E(L.ru)}</h1><p>${E(L.no)} · <span class="muted">${E(L.place)}</span> · Leksjon ${L.id}/${RP.LESSONS.length}</p></div>
       </header>
       <nav class="tabs ${RP.ai ? 'six' : ''}">${RP.SECTIONS.concat(RP.ai ? [{ id: 'chat', no: 'Fri prat', icon: '🤖' }] : []).map((s, i) => `<a href="#/lesson/${L.id}/${s.id}" class="tab ${s.id === this.sec ? 'on' : ''} ${p.done[s.id] ? 'done' : ''}">
@@ -167,7 +168,10 @@ RP.views.lesson = {
     RP.markSection(this.L.id, this.sec, xp);
     if (this.sec === 'roleplay') location.hash = '#/map'; else this.go(1);
   },
-  act(a, el) { this.sub.act && this.sub.act(a, el); },
+  act(a, el) {
+    if (a === 'silent') { RP.setSilent(!RP.silent()); RP.speech.stop(); RP.ui.toast(RP.silent() ? '🔇 Lydfri modus: ingen lytteoppgaver eller automatisk lyd' : '🔊 Lyd er på igjen'); el.textContent = RP.silent() ? '🔇' : '🔊'; el.classList.toggle('on', RP.silent()); if (this.sec === 'quiz' && RP.silent()) RP.sections.quiz.muteListening(); return; }
+    this.sub.act && this.sub.act(a, el);
+  },
   cleanup() { RP.speech.stop(); RP.speech.stopListening(); this.sub && this.sub.cleanup && this.sub.cleanup(); }
 };
 RP.sections = {};
@@ -295,7 +299,7 @@ RP.buildQuiz = L => {
   const others = (val, idx) => RP.shuffle([...new Set(pool.map(v => v[idx]).filter(x => x !== val))]).slice(0, 3);
   V.slice(0, 3).forEach(([ru, no]) => items.push({ type: 'mc', q: 'Hva betyr dette?', big: ru, say: ru, options: RP.shuffle([no, ...others(no, 1)]), correct: no }));
   V.slice(3, 5).forEach(([ru, no]) => items.push({ type: 'mc', q: `Hvordan sier man «${no}» på russisk?`, options: RP.shuffle([ru, ...others(ru, 0)]), correct: ru }));
-  V.slice(5, 7).forEach(([ru]) => items.push({ type: 'listen', q: 'Lytt og velg ordet du hører', say: ru, options: RP.shuffle([ru, ...others(ru, 0)]), correct: ru }));
+  V.slice(5, 7).forEach(([ru, no]) => items.push({ type: 'listen', q: 'Lytt og velg ordet du hører', say: ru, no, options: RP.shuffle([ru, ...others(ru, 0)]), correct: ru }));
   const [tru, tno] = V[7] || V[0];
   items.push({ type: 'type', q: `Skriv på russisk: «${tno}»`, answer: tru });
   const line = RP.shuffle(L.dialog.filter(d => { const n = tokens(d[1]).length; return n >= 3 && n <= 7; }))[0];
@@ -313,15 +317,17 @@ RP.sections.quiz = {
     const it = this.items[this.i]; this.answered = false; this.picked = [];
     const n = this.items.length, opt = (o, k) => `<button class="opt" data-act="pick" data-k="${k}"><span><b>${R(o)}</b>${CYR.test(o) ? tr(o) : ''}</span></button>`;
     let body = '';
+    if (it.type === 'listen' && RP.silent()) Object.assign(it, { type: 'mc', q: `Velg det russiske ordet for «${it.no}»` });
     if (it.type === 'mc' || it.type === 'listen') {
       body = (it.big ? `<div class="bigword" data-act="say">${R(it.big)}${tr(it.big)}</div>` : '') +
-        (it.type === 'listen' ? `<button class="btn big listenbtn" data-act="say">🔊 Spill av</button>` : '') +
+        (it.type === 'listen' ? `<button class="btn big listenbtn" data-act="say">🔊 Spill av</button><button class="btn ghost cantbtn" data-act="cantlisten">🔇 Kan ikke lytte nå</button>` : '') +
         `<div class="opts">${it.options.map(opt).join('')}</div>`;
     } else if (it.type === 'type') {
       body = `<form id="qform" class="qform"><input id="qin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Skriv kyrillisk eller latinsk (f.eks. spasibo)…"><button class="btn primary big">Sjekk</button></form>`;
     } else if (it.type === 'order') {
       body = `<p class="no-sent">«${E(it.no)}»</p><div class="built" id="built"></div>
-        <div class="opts tokens">${it.pool.map((t, k) => `<button class="tok" data-act="tok" data-k="${k}">${E(t.w)}</button>`).join('')}</div>`;
+        <div class="opts tokens">${it.pool.map((t, k) => `<button class="tok" data-act="tok" data-k="${k}">${E(t.w)}</button>`).join('')}</div>
+        <div class="row order-btns"><button class="btn" data-act="reset">↺ Nullstill</button><button class="btn primary" data-act="check" id="ordercheck">Sjekk svaret</button></div>`;
     }
     $('#sec').innerHTML = `<div class="quiz">
       <div class="qbar"><div class="bar"><i style="width:${this.i / n * 100}%"></i></div><span>${this.i + 1}/${n}</span>
@@ -330,7 +336,7 @@ RP.sections.quiz = {
       <div class="feedback" id="fb"></div></div>`;
     if (it.type === 'type') { $('#qform').onsubmit = e => { e.preventDefault(); this.submit(); }; setTimeout(() => $('#qin').focus(), 30); }
     if (it.type === 'order') this.drawBuilt();
-    if (it.say && it.type === 'listen') setTimeout(() => say(it.say), 250);
+    if (it.say && it.type === 'listen') setTimeout(() => say(it.say, { auto: true }), 250);
   },
   check(ok, right) {
     this.answered = true;
@@ -344,7 +350,7 @@ RP.sections.quiz = {
     $('#fb').innerHTML = `<div><b>${ok ? RP.skin().cheers[Math.floor(Math.random() * 4)] + ' Riktig.' : 'Ikke helt.'}</b>
       ${right ? `<div>Riktig svar: <b>${R(right)}</b></div>` : ''}</div>
       <button class="btn primary big" data-act="cont">${ok ? 'Neste →' : 'Fortsett →'}</button>`;
-    if (answerRu && CYR.test(answerRu)) say(answerRu);
+    if (answerRu && CYR.test(answerRu)) say(answerRu, { auto: true });
     // Riktig svar går automatisk videre – feil svar venter på et trykk så man rekker å lese fasit
     if (ok) this.auto = setTimeout(() => this.next(), 1300);
   },
@@ -358,6 +364,11 @@ RP.sections.quiz = {
     const it = this.items[this.i]; if (this.answered || k >= it.pool.length || this.picked.includes(k)) return;
     this.picked.push(k); this.drawBuilt();
     if (this.picked.length === it.pool.length) setTimeout(() => this.submit(), 250);
+  },
+  /* Gjør gjenstående lytteoppgaver om til leseoppgaver (uten å starte quizen på nytt). */
+  muteListening() {
+    this.items.forEach((x, n) => { if (n >= this.i && x.type === 'listen') Object.assign(x, { type: 'mc', q: `Velg det russiske ordet for «${x.no}»` }); });
+    if (!this.answered && !this.done) this.show();
   },
   untok(j) { if (this.answered) return; this.picked.splice(j, 1); this.drawBuilt(); },
   drawBuilt() {
@@ -406,6 +417,13 @@ RP.sections.quiz = {
     if (a === 'pick') this.pick(+el.dataset.k);
     if (a === 'tok') this.tok(+el.dataset.k);
     if (a === 'untok') this.untok(+el.dataset.j);
+    if (a === 'reset' && !this.answered) { this.picked = []; this.drawBuilt(); }
+    if (a === 'check') this.submit();
+    if (a === 'cantlisten') {
+      RP.state.settings.silentUntil = Date.now() + 3600000; RP.save(); RP.speech.stop();
+      RP.ui.toast('🔇 Ingen lytteoppgaver den neste timen');
+      this.muteListening();
+    }
     if (a === 'say') say(this.items[this.i].say);
     if (a === 'cont') this.next();
     if (a === 'retry') { this.done = false; this.render(this.L); }
@@ -422,6 +440,7 @@ RP.sections.roleplay = {
     $('#sec').innerHTML = `<div class="rp">
       <div class="rp-intro ornament"><div class="avatar big g-${genderOf(bot)}">${E(bot[0])}</div>
         <div><h2>Samtale med ${E(bot)}</h2><p>${E(this.rp.intro)}</p>
+        ${RP.silent() ? '<p class="muted small">🔇 Lydfri modus: les replikkene og skriv svarene.</p>' : ''}
         <p class="muted small">Svar muntlig med mikrofonen ${RP.speech.sttOK ? '' : '(ikke støttet i denne nettleseren – skriv i stedet)'} eller skriv svaret. Trenger du hjelp, trykk 💡 Hint.</p>
         <button class="btn primary big" data-act="start">▶ Start samtalen</button></div></div>
       <div class="chat" id="chat"></div>
@@ -451,7 +470,7 @@ RP.sections.roleplay = {
     const s = this.rp.steps[this.step];
     this.bubble('bot', `<div class="ru">${R(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
     $('#rpc').hidden = false; $('#rpin').value = '';
-    await say(s.b, { gender: genderOf(this.rp.bot) });
+    await say(s.b, { gender: genderOf(this.rp.bot), auto: true });
   },
   async mic() {
     if (this.busy || this.ended || this.step < 0) return;
@@ -485,14 +504,14 @@ RP.sections.roleplay = {
   showHint(level) {
     const s = this.rp.steps[this.step]; this.hint = level || Math.min(2, this.hint + 1);
     $('#hint').innerHTML = `💡 ${E(s.h)}` + (this.hint >= 2 ? `<div class="model" data-act="model">🔊 <b>${R(s.m)}</b> <span class="muted">${E(RP.translit(RP.disp(s.m)))}</span></div>` : ` <span class="muted">(trykk 💡 igjen for fasit)</span>`);
-    if (this.hint >= 2) say(s.m);
+    if (this.hint >= 2) say(s.m, { auto: true });
   },
   send() { const v = $('#rpin').value.trim(); if (!v || this.busy) return; $('#rpin').value = ''; this.answer([v]); },
   skip() {
     if (this.busy || this.step < 0) return;
     const s = this.rp.steps[this.step]; this.skipped++;
     this.bubble('me', `<div class="ru">${R(s.m)}</div>${tr(s.m)}`, 'skipped');
-    this.busy = true; say(s.m).then(() => { this.busy = false; this.nextStep(); });
+    this.busy = true; say(s.m, { auto: true }).then(() => { this.busy = false; this.nextStep(); });
   },
   end() {
     this.ended = true; $('#rpc').hidden = true;
@@ -510,7 +529,7 @@ RP.sections.roleplay = {
       <button class="btn" data-act="restart">↻ Spill igjen</button></div>`;
     $('#chat').appendChild(d); d.scrollIntoView({ behavior: 'smooth' });
     if (ok) RP.ui.confetti();
-    say(ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!', { gender: genderOf(this.rp.bot) });
+    say(ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!', { gender: genderOf(this.rp.bot), auto: true });
   },
   act(a) {
     if (a === 'start') { $('.rp-intro button').remove(); this.nextStep(); }
@@ -559,14 +578,14 @@ RP.views.review = {
         <button class="btn g4" data-act="grade" data-g="4">Lett</button></div>
       <div class="row stack"><button class="btn primary big" data-act="flip" id="flipbtn">Vis svaret</button>
       ${RP.speech.sttOK ? `<button class="btn ghost" data-act="speak">🎤 Si ordet</button>` : ''}</div></section>`;
-    if (this.dir === 'ru') say(c.ru);
+    if (this.dir === 'ru') say(c.ru, { auto: true });
   },
   flip() {
     if (this.flipped) return; this.flipped = true; const c = this.queue[0];
     $('#flash').classList.add('flipped');
     $('#flash').insertAdjacentHTML('beforeend', `<div class="back-face"><div class="ru">${R(c.ru)}</div>${tr(c.ru)}<div class="no">${E(c.no)}</div></div>`);
     $('#grades').hidden = false; $('#flipbtn').hidden = true;
-    if (this.dir === 'no') say(c.ru);
+    if (this.dir === 'no') say(c.ru, { auto: true });
   },
   grade(g) {
     if (!this.flipped) return;
@@ -628,6 +647,7 @@ RP.views.profile = {
         <label><input type="checkbox" data-set="translit" ${s.settings.translit ? 'checked' : ''}> Vis translitterasjon</label>
         <label><input type="checkbox" data-set="translation" ${s.settings.translation ? 'checked' : ''}> Vis norsk oversettelse i dialoger</label>
         <label><input type="checkbox" data-set="sound" ${s.settings.sound ? 'checked' : ''}> Lydeffekter</label>
+        <label><input type="checkbox" data-set="silent" ${s.settings.silent ? 'checked' : ''}> 🔇 Lydfri modus (ingen lytteoppgaver eller automatisk opplesning)</label>
         <label><input type="checkbox" data-set="stress" ${s.settings.stress ? 'checked' : ''}> Vis trykkmerker (молоко́)</label>
         <label>Stemme <select data-set="voice" data-str><option value="auto" ${s.settings.voice !== 'browser' ? 'selected' : ''}>Beste tilgjengelige (opptak → Claude → nettleser)</option><option value="browser" ${s.settings.voice === 'browser' ? 'selected' : ''}>Kun nettleserens stemme</option></select></label>
         <label><input type="checkbox" data-set="unlockAll" ${s.settings.unlockAll ? 'checked' : ''}> Lås opp alle leksjoner</label>
@@ -645,7 +665,7 @@ RP.views.profile = {
     </section>`;
     $$('[data-set]').forEach(inp => inp.onchange = inp.oninput = () => {
       const k = inp.dataset.set, v = inp.type === 'checkbox' ? inp.checked : inp.hasAttribute('data-str') ? inp.value : +inp.value;
-      if (k === 'dailyGoal') s.dailyGoal = v; else s.settings[k] = v;
+      if (k === 'dailyGoal') s.dailyGoal = v; else if (k === 'silent') RP.setSilent(v); else s.settings[k] = v;
       if (k === 'rate') $('#ratev').textContent = v;
       RP.save(); RP.ui.renderTopbar();
     });
