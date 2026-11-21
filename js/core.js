@@ -61,15 +61,15 @@ RP.judge = (inputs, step) => {
 const KEY = 'govorushka_v1';
 const DEFAULT = () => ({
   xp: 0, daily: { date: RP.today(), xp: 0 }, streak: { count: 0, last: null }, dailyGoal: 50,
-  lessons: {}, srs: {}, badges: {},
-  stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0 },
-  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus' }
+  lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 },
+  stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0, chats: 0 },
+  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus', stress: true, voice: 'auto' }
 });
 RP.load = () => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* privat modus e.l. */ }
   const d = DEFAULT();
-  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings } } : d;
+  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings }, kb: { ...d.kb, ...s.kb }, readings: { ...s.readings } } : d;
   if (RP.state.daily.date !== RP.today()) RP.state.daily = { date: RP.today(), xp: 0 };
 };
 RP.save = () => { try { localStorage.setItem(KEY, JSON.stringify(RP.state)); } catch (e) { } };
@@ -161,7 +161,7 @@ RP.markSection = (id, sec, xp) => {
   if (!wasComplete && RP.isComplete(id)) {
     RP.addXP(50, 'Leksjon fullført');
     RP.sfx('level');
-    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (id < 20 ? ' Neste sted er låst opp.' : ''), 'gold');
+    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (id < RP.LESSONS.length ? ' Neste sted er låst opp.' : ''), 'gold');
   }
 };
 
@@ -172,7 +172,7 @@ RP.BADGES = [
   { id: 'moskva', icon: '🏰', no: 'Moskvas venn', d: 'Fullfør alle leksjoner i Moskva', test: () => regionDone(RP.REGIONS[0]) },
   { id: 'ring', icon: '💍', no: 'Den gylne ring', d: 'Fullfør Den gylne ring', test: () => regionDone(RP.REGIONS[1]) },
   { id: 'spb', icon: '⚓', no: 'Petersburger', d: 'Fullfør St. Petersburg', test: () => regionDone(RP.REGIONS[2]) },
-  { id: 'baikal', icon: '🦭', no: 'Bajkal-mester', d: 'Fullfør hele kurset', test: () => regionDone(RP.REGIONS[3]) },
+  { id: 'baikal', icon: '🦭', no: 'Bajkal-mester', d: 'Fullfør Bajkal og Sibir', test: () => regionDone(RP.REGIONS[3]) },
   { id: 'streak3', icon: '🔥', no: 'Ild i ovnen', d: '3 dagers streak', test: () => RP.streakAlive() >= 3 },
   { id: 'streak7', icon: '🐻', no: 'Bjørnestyrke', d: '7 dagers streak', test: () => RP.streakAlive() >= 7 },
   { id: 'streak30', icon: '❄️', no: 'Sibirsk utholdenhet', d: '30 dagers streak', test: () => RP.streakAlive() >= 30 },
@@ -181,7 +181,13 @@ RP.BADGES = [
   { id: 'words50', icon: '📚', no: 'Ordsamler', d: '50 ord i repetisjonsbunken', test: () => Object.keys(RP.state.srs).length >= 50 },
   { id: 'reviewer', icon: '🧠', no: 'Hukommelsesmester', d: '100 repetisjoner', test: () => RP.state.stats.reviews >= 100 },
   { id: 'voice', icon: '🎤', no: 'Gullstrupe', d: '20 uttalelser med ≥ 80 %', test: () => RP.state.stats.goodSpeech >= 20 },
-  { id: 'lvl5', icon: '⚔️', no: 'Bogatyr', d: 'Nå nivå 6', test: () => RP.levelInfo().lvl >= 6 }
+  { id: 'lvl5', icon: '⚔️', no: 'Bogatyr', d: 'Nå nivå 6', test: () => RP.levelInfo().lvl >= 6 },
+  { id: 'kavkaz', icon: '🏔️', no: 'Fjellgeit', d: 'Fullfør Kaukasus', test: () => RP.REGIONS[4] && regionDone(RP.REGIONS[4]) },
+  { id: 'kamchatka', icon: '🌋', no: 'Vulkanvandrer', d: 'Fullfør Kamtsjatka', test: () => RP.REGIONS[5] && regionDone(RP.REGIONS[5]) },
+  { id: 'arktika', icon: '🌌', no: 'Nordlysjeger', d: 'Fullfør Murmansk og Arktis', test: () => RP.REGIONS[6] && regionDone(RP.REGIONS[6]) },
+  { id: 'reader', icon: '📜', no: 'Bokorm', d: 'Les alle lesetekstene', test: () => RP.READINGS && RP.READINGS.length && RP.READINGS.every(r => RP.state.readings[r.id]) },
+  { id: 'typist', icon: '⌨️', no: 'Kyrillisk skrivemaskin', d: 'Skriv 100 ord på russisk tastatur', test: () => RP.state.kb.words >= 100 },
+  { id: 'chatter', icon: '🤖', no: 'Samtalepartner', d: 'Fullfør 5 frie samtaler', test: () => RP.state.stats.chats >= 5 }
 ];
 RP.checkBadges = () => {
   for (const b of RP.BADGES) if (!RP.state.badges[b.id] && b.test()) {
@@ -224,4 +230,50 @@ RP.sfx = type => {
       o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d + 0.02); t += d * 0.9;
     }
   } catch (e) { }
+};
+
+/* ---------- Trykkmerker ---------- */
+const ACUTE = '́';
+RP.unstress = s => String(s).replace(/́/g, '');
+/* Setter inn trykk fra RP.STRESS for ord som mangler det. Tekst som allerede har trykk beholdes. */
+RP.stress = s => {
+  s = String(s);
+  if (!RP.STRESS || s.includes(ACUTE)) return s;
+  return s.replace(/[А-Яа-яЁё]+/g, w => {
+    const v = RP.STRESS[w.toLowerCase()]; if (!v) return w;
+    return w[0] !== w[0].toLowerCase() ? v[0].toUpperCase() + v.slice(1) : v;
+  });
+};
+RP.disp = s => RP.state.settings.stress ? RP.stress(s) : RP.unstress(s);
+
+/* ---------- Uttale: fonetisk nøkkel og ord-for-ord-justering ----------
+   Tekstbasert: sammenligner det talegjenkjenningen hørte med målet, med russiske lydregler
+   (akanje: ubetonet o ≈ a, stemte konsonanter blir ustemte i utlyd, -ться/-тся ≈ «tsa»). */
+RP.phon = w => RP.normalize(w)
+  .replace(/([oe])go\b/g, '$1vo').replace(/ts?ya\b/g, 'tsa').replace(/o/g, 'a').replace(/ye/g, 'e').replace(/yi/g, 'i')
+  .replace(/zh\b/g, 'sh').replace(/b\b/g, 'p').replace(/d\b/g, 't').replace(/g\b/g, 'k').replace(/v\b/g, 'f').replace(/z\b/g, 's');
+const wsim = (a, b) => { a = RP.phon(a); b = RP.phon(b); const L = Math.max(a.length, b.length); return L ? 1 - RP.lev(a, b) / L : 1; };
+/* Justerer ordene (dynamisk programmering) og gir score per målord. */
+RP.alignWords = (target, heard) => {
+  const T = RP.unstress(target).split(/\s+/).filter(w => RP.normalize(w)), H = String(heard).split(/\s+/).filter(w => RP.normalize(w));
+  const n = T.length, m = H.length, dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++)
+    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1] + wsim(T[i - 1], H[j - 1]));
+  const res = T.map(w => ({ w, heard: '', s: 0 }));
+  let i = n, j = m;
+  while (i > 0 && j > 0) {
+    const s = wsim(T[i - 1], H[j - 1]);
+    if (Math.abs(dp[i][j] - (dp[i - 1][j - 1] + s)) < 1e-9) { res[i - 1] = { w: T[i - 1], heard: H[j - 1], s }; i--; j--; }
+    else if (dp[i][j] === dp[i - 1][j]) i--; else j--;
+  }
+  const score = res.length ? res.reduce((a, r) => a + r.s, 0) / res.length : 0;
+  return { words: res, score: Math.max(0, Math.min(1, score - Math.max(0, m - n) * 0.05)) };
+};
+
+/* ---------- Lydnøkkel for innspilte opptak (FNV-1a av normalisert tekst) ---------- */
+RP.audioKey = s => {
+  const t = RP.unstress(s).toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  let h = 0x811c9dc5;
+  for (const ch of t) { h ^= ch.codePointAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0');
 };

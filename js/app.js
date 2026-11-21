@@ -36,6 +36,7 @@
     if (k === 'm') return go('#/map');
     if (k === 'r') return go('#/review');
     if (k === 'a') return go('#/alphabet');
+    if (k === 'k') return go('#/keyboard');
     if (k === 'p') return go('#/profile');
     if (e.key === '?') { e.preventDefault(); RP.ui.help(); return; }
     if (e.key === 'Escape') {
