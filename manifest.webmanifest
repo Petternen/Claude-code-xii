@@ -1,0 +1,12 @@
+{
+  "name": "Говорушка – russisk på norsk",
+  "short_name": "Говорушка",
+  "description": "Russiskkurs for norsktalende med tale, samtaler og spillelementer.",
+  "start_url": "./#/map",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf3e4",
+  "theme_color": "#b3202a",
+  "lang": "no",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
