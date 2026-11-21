@@ -1,0 +1,703 @@
+/* Visninger: kart, leksjon (dialog, ord, grammatikk, quiz, samtale), repetisjon, alfabet, profil. */
+window.RP = window.RP || {};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const E = RP.esc;
+const CYR = /[а-яё]/i;
+const genderOf = name => RP.GENDER[name] || 'f';
+const tr = s => RP.state.settings.translit ? `<div class="tl">${E(RP.translit(s))}</div>` : '';
+const kbd = k => `<kbd>${E(k)}</kbd>`;
+const say = (t, o) => RP.speech.speak(t, o);
+
+/* ================= Felles UI ================= */
+RP.ui = {
+  keys(list) { $('#keys').innerHTML = list.map(([k, t]) => `<span>${k.split(' ').map(kbd).join('')} ${E(t)}</span>`).join('') + `<span>${kbd('?')} Hjelp</span>`; },
+  toast(msg, cls = '') {
+    const t = document.createElement('div'); t.className = 'toast ' + cls; t.textContent = msg;
+    const box = $('#toasts'); box.appendChild(t);
+    while (box.children.length > 4) box.firstChild.remove();
+    setTimeout(() => t.classList.add('out'), 2600); setTimeout(() => t.remove(), 3100);
+  },
+  toastXP(n, label) { RP.ui.toast(`+${n} XP${label ? ' · ' + label : ''}`, 'xp'); },
+  modal(html, onClose) {
+    const m = $('#modal'); m.innerHTML = `<div class="modal-card ornament" role="dialog" aria-modal="true">${html}<div class="modal-foot"><button class="btn primary" data-close>OK ${kbd('Enter')}</button></div></div>`;
+    m.hidden = false; RP.modalOpen = true;
+    const close = () => { m.hidden = true; m.innerHTML = ''; RP.modalOpen = false; onClose && onClose(); };
+    RP.closeModal = close;
+    $('[data-close]', m).onclick = close; m.onclick = e => { if (e.target === m) close(); };
+    $('[data-close]', m).focus();
+  },
+  levelUp(lvl) {
+    const t = RP.TITLES[Math.min(lvl - 1, RP.TITLES.length - 1)];
+    RP.ui.modal(`<div class="levelup"><div class="burst">⭐</div><h2>Новый уровень!</h2><p class="big">Nivå ${lvl}</p><p>Ny tittel: <b>${E(t)}</b></p></div>`);
+    RP.ui.confetti();
+  },
+  confetti() {
+    const c = document.createElement('div'); c.className = 'confetti';
+    c.innerHTML = Array.from({ length: 40 }, (_, i) => `<i style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .6}s;background:${['var(--red)', 'var(--gold)', 'var(--blue)', 'var(--green)'][i % 4]}"></i>`).join('');
+    document.body.appendChild(c); setTimeout(() => c.remove(), 2500);
+  },
+  renderTopbar() {
+    const s = RP.state, L = RP.levelInfo(), due = RP.srsDue().length, st = RP.streakAlive();
+    const goal = Math.min(1, s.daily.xp / s.dailyGoal), C = 2 * Math.PI * 15;
+    const route = location.hash.split('/')[1] || 'map';
+    const nav = (r, k, icon, label, extra = '') => `<a href="#/${r}" class="nav ${route === r ? 'on' : ''}" title="${label} (${k})"><span class="ni">${icon}</span><span class="nl">${label}</span>${kbd(k)}${extra}</a>`;
+    $('#topbar').innerHTML = `
+      <a href="#/map" class="logo" title="Говорушка"><span class="matr">🪆</span><span><b>Говорушка</b><small>russisk på norsk</small></span></a>
+      <nav>${nav('map', 'M', '🗺️', 'Kart')}${nav('review', 'R', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '')}${nav('alphabet', 'A', 'Аа', 'Alfabet')}${nav('profile', 'P', '👤', 'Profil')}</nav>
+      <div class="hud">
+        <div class="streak ${st ? 'on' : ''}" title="Streak: ${st} dager på rad">🔥<b>${st}</b></div>
+        <div class="goal" title="Dagens mål: ${s.daily.xp}/${s.dailyGoal} XP">
+          <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="track"/><circle cx="18" cy="18" r="15" class="bar" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - goal)}"/></svg>
+          <span>${goal >= 1 ? '✓' : Math.round(goal * 100) + '%'}</span></div>
+        <div class="lvl" title="${E(L.title)} – ${L.into}/${L.need} XP til neste nivå">
+          <div class="shield">${L.lvl}</div>
+          <div class="lvlbar"><small>${E(L.title.split(' · ')[1])}</small><div class="bar"><i style="width:${L.pct * 100}%"></i></div></div>
+        </div>
+      </div>`;
+  },
+  help() {
+    RP.ui.modal(`<h2>⌨️ Tastatursnarveier</h2>
+    <div class="helpgrid">
+      <div><h3>Overalt</h3><p>${kbd('M')} Kart · ${kbd('R')} Repetisjon · ${kbd('A')} Alfabet · ${kbd('P')} Profil · ${kbd('Esc')} Tilbake</p></div>
+      <div><h3>Kart</h3><p>${kbd('←')}${kbd('→')}${kbd('↑')}${kbd('↓')} Velg sted · ${kbd('Enter')} Åpne leksjon</p></div>
+      <div><h3>Leksjon</h3><p>${kbd('⇧')}+${kbd('←')}/${kbd('→')} Forrige/neste del · ${kbd('1')}–${kbd('5')} med ${kbd('Alt')} hopper til del · ${kbd('N')} Fullfør del og gå videre</p></div>
+      <div><h3>Dialog</h3><p>${kbd('Space')} Spill av alt/stopp · ${kbd('↑')}${kbd('↓')} Velg replikk · ${kbd('Enter')} Spill replikk · ${kbd('S')} Sakte · ${kbd('T')} Translitterasjon · ${kbd('O')} Oversettelse</p></div>
+      <div><h3>Ord</h3><p>${kbd('↑')}${kbd('↓')} Velg · ${kbd('Space')} Hør · ${kbd('V')} Si ordet (uttalesjekk)</p></div>
+      <div><h3>Quiz</h3><p>${kbd('1')}–${kbd('4')} Svar · ${kbd('Space')} Hør igjen · ${kbd('Enter')} Sjekk/neste · ordrekkefølge: tall velger ord, ${kbd('⌫')} angrer</p></div>
+      <div><h3>Samtale</h3><p>${kbd('Space')} Snakk (mikrofon) · ${kbd('T')} Skriv svaret · ${kbd('H')} Hint (2× = fasit) · ${kbd('L')} Hør igjen · ${kbd('O')} Oversett · ${kbd('X')} Hopp over</p></div>
+      <div><h3>Repetisjon</h3><p>${kbd('Space')} Snu kortet · ${kbd('1')} Igjen ${kbd('2')} Vanskelig ${kbd('3')} Bra ${kbd('4')} Lett · ${kbd('V')} Si ordet</p></div>
+    </div><p class="muted">Du kan skrive russisk med kyrillisk eller latinske bokstaver (f.eks. «privet», «spasibo»).</p>`);
+  }
+};
+
+/* ================= KART ================= */
+RP.views = {};
+RP.views.map = {
+  render() {
+    const firstOpen = (RP.LESSONS.find(l => RP.isUnlocked(l.id) && !RP.isComplete(l.id)) || RP.LESSONS[19]).id;
+    RP.mapSel = firstOpen;
+    const s = RP.state, next = RP.lesson(firstOpen), due = RP.srsDue().length;
+    let html = `<section class="hero ornament">
+      <div><h1>Добро пожаловать!</h1><p>Reisen din gjennom Russland – fra Den røde plass til Bajkal.</p></div>
+      <div class="hero-actions">
+        <button class="btn primary big" data-act="open" data-id="${next.id}">▶ ${RP.isComplete(next.id) ? 'Øv igjen' : 'Fortsett'}: ${E(next.ru)} ${kbd('Enter')}</button>
+        ${due ? `<a class="btn" href="#/review">🃏 ${due} ord å repetere ${kbd('R')}</a>` : ''}
+      </div>
+      <div class="today"><b>${s.daily.xp}</b>/${s.dailyGoal} XP i dag</div>
+    </section><div class="map">`;
+    for (const r of RP.REGIONS) {
+      const ls = RP.LESSONS.filter(l => l.id >= r.from && l.id <= r.to);
+      const done = ls.filter(l => RP.isComplete(l.id)).length;
+      html += `<section class="region" style="--rc:${r.color}"><header class="region-head"><h2>${E(r.ru)}</h2><span>${E(r.no)} · ${done}/${ls.length}</span></header><div class="path">`;
+      ls.forEach((l, i) => {
+        const p = RP.state.lessons[l.id], unlocked = RP.isUnlocked(l.id), complete = RP.isComplete(l.id);
+        const stars = p ? p.stars : 0;
+        const cls = [unlocked ? '' : 'locked', complete ? 'done' : '', l.id === firstOpen ? 'current' : '', l.id === RP.mapSel ? 'sel' : '', l.boss ? 'boss' : ''].join(' ');
+        html += `<div class="stop" style="--x:${[0, 1, 2, 1][i % 4]}">
+          <button class="node ${cls}" data-act="open" data-id="${l.id}" aria-label="Leksjon ${l.id}: ${E(l.no)}${unlocked ? '' : ' (låst)'}">
+            <span class="medal">${unlocked ? l.icon : '🔒'}</span>
+            ${l.id === firstOpen ? '<span class="flag">Du er her</span>' : ''}
+          </button>
+          <div class="node-label"><b>${l.id}. ${E(l.ru)}</b><small>${E(l.no)} · ${E(l.place)}</small>
+          <span class="stars">${[1, 2, 3].map(n => n <= stars ? '★' : '☆').join('')}</span></div></div>`;
+      });
+      html += `</div></section>`;
+    }
+    $('#main').innerHTML = html + '</div>';
+    RP.ui.keys([['← →', 'Velg sted'], ['Enter', 'Åpne']]);
+    this.scroll(false);
+  },
+  scroll(smooth = true) { const n = $('.node.sel'); n && n.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' }); },
+  move(d) {
+    let id = RP.mapSel + d;
+    if (id < 1 || id > 20) return;
+    if (!RP.isUnlocked(id)) { RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp'); return; }
+    RP.mapSel = id; $$('.node').forEach(n => n.classList.toggle('sel', +n.dataset.id === id)); this.scroll(); RP.sfx('click');
+  },
+  key(e) {
+    if (['ArrowRight', 'ArrowDown'].includes(e.key)) { this.move(1); return true; }
+    if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { this.move(-1); return true; }
+    if (e.key === 'Enter') { this.act('open', { dataset: { id: RP.mapSel } }); return true; }
+  },
+  act(a, el) {
+    if (a === 'open') {
+      const id = +el.dataset.id;
+      if (!RP.isUnlocked(id)) { RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp'); RP.sfx('bad'); return; }
+      RP.mapSel = id; location.hash = `#/lesson/${id}/dialog`;
+    }
+  }
+};
+
+/* ================= LEKSJON (ramme) ================= */
+RP.views.lesson = {
+  render([id, sec = 'dialog']) {
+    const L = RP.lesson(id);
+    if (!L) { location.hash = '#/map'; return; }
+    if (!RP.isUnlocked(L.id)) { RP.ui.toast('🔒 Leksjonen er låst'); location.hash = '#/map'; return; }
+    this.L = L; this.sec = RP.SECTIONS.find(s => s.id === sec) ? sec : 'dialog';
+    const p = RP.prog(L.id);
+    $('#main').innerHTML = `<article class="lesson">
+      <header class="lesson-head ornament">
+        <a class="back" href="#/map" title="Tilbake til kartet (Esc)">←</a>
+        <div class="lh-icon">${L.icon}</div>
+        <div class="lh-title"><h1>${E(L.ru)}</h1><p>${E(L.no)} · <span class="muted">${E(L.place)}</span> · Leksjon ${L.id}/20</p></div>
+      </header>
+      <nav class="tabs">${RP.SECTIONS.map((s, i) => `<a href="#/lesson/${L.id}/${s.id}" class="tab ${s.id === this.sec ? 'on' : ''} ${p.done[s.id] ? 'done' : ''}">
+        <span>${s.icon}</span><b>${s.no}</b>${p.done[s.id] ? '<i>✓</i>' : ''}<small>Alt+${i + 1}</small></a>`).join('')}</nav>
+      <div id="sec" class="sec"></div></article>`;
+    this.sub = RP.sections[this.sec];
+    this.sub.render(L);
+  },
+  go(d) { const i = RP.SECTIONS.findIndex(s => s.id === this.sec) + d; if (i >= 0 && i < RP.SECTIONS.length) location.hash = `#/lesson/${this.L.id}/${RP.SECTIONS[i].id}`; },
+  finish(xp = 10) { // marker del som ferdig og gå videre
+    RP.markSection(this.L.id, this.sec, xp);
+    if (this.sec === 'roleplay') location.hash = '#/map'; else this.go(1);
+  },
+  key(e) {
+    if (e.shiftKey && e.key === 'ArrowRight') { this.go(1); return true; }
+    if (e.shiftKey && e.key === 'ArrowLeft') { this.go(-1); return true; }
+    if (e.altKey && /^Digit[1-5]$/.test(e.code)) { location.hash = `#/lesson/${this.L.id}/${RP.SECTIONS[+e.code.slice(5) - 1].id}`; return true; }
+    return this.sub.key && this.sub.key(e);
+  },
+  act(a, el) { this.sub.act && this.sub.act(a, el); },
+  cleanup() { RP.speech.stop(); RP.speech.stopListening(); this.sub && this.sub.cleanup && this.sub.cleanup(); }
+};
+RP.sections = {};
+
+/* ---------- Dialog ---------- */
+RP.sections.dialog = {
+  render(L) {
+    this.L = L; this.sel = 0; this.slow = false; this.token = 0;
+    const st = RP.state.settings;
+    $('#sec').innerHTML = `<p class="intro">${E(L.intro)}</p>
+      <div class="toolbar">
+        <button class="btn primary" data-act="playall" id="playall">▶ Spill av hele ${kbd('Space')}</button>
+        <button class="btn toggle ${this.slow ? 'on' : ''}" data-act="slow" id="slowbtn">🐢 Sakte ${kbd('S')}</button>
+        <button class="btn toggle ${st.translit ? 'on' : ''}" data-act="tl">Aa Translitt. ${kbd('T')}</button>
+        <button class="btn toggle ${st.translation ? 'on' : ''}" data-act="trans">🇳🇴 Oversettelse ${kbd('O')}</button>
+      </div>
+      ${RP.speech.hasRuVoice ? '' : '<p class="warn">⚠️ Fant ingen russisk stemme i nettleseren. Opplesning kan mangle eller høres norsk ut. Chrome, Edge og Safari har russiske stemmer.</p>'}
+      <div class="dialog ${st.translation ? '' : 'hide-no'}">${L.dialog.map(([who, ru, no], i) => `
+        <div class="line ${i === 0 ? 'sel' : ''} ${who === L.dialog[0][0] ? 'left' : 'right'}" data-act="line" data-i="${i}">
+          <div class="avatar g-${genderOf(who)}">${E(who[0])}</div>
+          <div class="bubble"><small class="who">${E(who)}</small><div class="ru">${E(ru)}</div>${tr(ru)}<div class="no">${E(no)}</div></div>
+        </div>`).join('')}</div>
+      <div class="sec-foot"><button class="btn primary" data-act="next">Fortsett til ordforrådet ${kbd('N')}</button></div>`;
+    RP.ui.keys([['Space', 'Spill av'], ['↑ ↓', 'Velg'], ['Enter', 'Spill replikk'], ['S', 'Sakte'], ['T', 'Translitt.'], ['O', 'Oversett'], ['N', 'Neste'], ['⇧ →', 'Neste del']]);
+  },
+  select(i) { this.sel = Math.max(0, Math.min(this.L.dialog.length - 1, i)); $$('.line').forEach((n, j) => n.classList.toggle('sel', j === this.sel)); $$('.line')[this.sel].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
+  async playLine(i, tok) {
+    this.select(i); const n = $$('.line')[i]; n.classList.add('playing');
+    const [who, ru] = this.L.dialog[i];
+    await say(ru, { gender: genderOf(who), slow: this.slow });
+    n && n.classList.remove('playing');
+    return tok === this.token;
+  },
+  async playAll() {
+    if (RP.speech.speaking || this.playingAll) { this.stop(); return; }
+    const tok = ++this.token; this.playingAll = true; $('#playall').innerHTML = `■ Stopp ${kbd('Space')}`;
+    for (let i = 0; i < this.L.dialog.length; i++) { if (!(await this.playLine(i, tok))) return; await new Promise(r => setTimeout(r, 350)); if (tok !== this.token) return; }
+    this.stop(); this.heard = true;
+  },
+  stop() { this.token++; this.playingAll = false; RP.speech.stop(); $$('.line').forEach(n => n.classList.remove('playing')); const b = $('#playall'); if (b) b.innerHTML = `▶ Spill av hele ${kbd('Space')}`; },
+  toggle(k) { RP.state.settings[k] = !RP.state.settings[k]; RP.save(); RP.views.lesson.render([this.L.id, 'dialog']); },
+  act(a, el) {
+    if (a === 'playall') this.playAll();
+    if (a === 'line') { this.stop(); this.playLine(+el.dataset.i, this.token); }
+    if (a === 'slow') { this.slow = !this.slow; el.classList.toggle('on', this.slow); }
+    if (a === 'tl') this.toggle('translit');
+    if (a === 'trans') this.toggle('translation');
+    if (a === 'next') { this.stop(); RP.views.lesson.finish(10); }
+  },
+  key(e) {
+    const k = e.key.toLowerCase();
+    if (e.key === ' ') { this.playAll(); return true; }
+    if (e.key === 'ArrowDown') { this.select(this.sel + 1); return true; }
+    if (e.key === 'ArrowUp') { this.select(this.sel - 1); return true; }
+    if (e.key === 'Enter') { this.stop(); this.playLine(this.sel, this.token); return true; }
+    if (k === 's') { this.act('slow', $('#slowbtn')); return true; }
+    if (k === 't') { this.toggle('translit'); return true; }
+    if (k === 'o') { this.toggle('translation'); return true; }
+    if (k === 'n') { this.act('next'); return true; }
+  },
+  cleanup() { this.stop(); }
+};
+
+/* ---------- Ordforråd ---------- */
+RP.speakCheck = async (target, outEl) => {
+  if (!RP.speech.sttOK) { RP.ui.toast(RP.micErrorText({ message: 'unsupported' })); return null; }
+  outEl.innerHTML = '<span class="rec">● Lytter …</span>';
+  try {
+    const alts = await RP.speech.listen(t => { outEl.innerHTML = `<span class="rec">● ${E(t)}</span>`; });
+    if (!alts.length) { outEl.textContent = 'Hørte ingenting – prøv igjen.'; return null; }
+    const best = alts.map(a => ({ a, s: RP.similarity(a, target) })).sort((x, y) => y.s - x.s)[0];
+    const pct = Math.round(best.s * 100);
+    outEl.innerHTML = `<span class="score ${pct >= 80 ? 'good' : pct >= 50 ? 'mid' : 'bad'}">${pct}%</span> «${E(best.a)}»`;
+    RP.sfx(pct >= 80 ? 'ok' : 'bad');
+    if (pct >= 80) { RP.state.stats.goodSpeech++; RP.save(); RP.checkBadges(); }
+    return pct;
+  } catch (err) { outEl.textContent = RP.micErrorText(err); return null; }
+};
+
+RP.sections.vocab = {
+  render(L) {
+    this.L = L; this.sel = 0; this.rewarded = new Set();
+    $('#sec').innerHTML = `<p class="intro">Klikk eller trykk ${kbd('Space')} for å høre ordet, og ${kbd('V')} for å si det selv. Ordene legges i repetisjonsbunken din når du fortsetter.</p>
+      <div class="vocab">${L.vocab.map(([ru, no], i) => `
+        <div class="vcard ${i === 0 ? 'sel' : ''}" data-act="vsel" data-i="${i}">
+          <div class="vmain"><div class="ru">${E(ru)}</div>${tr(ru)}<div class="no">${E(no)}</div></div>
+          <div class="vbtns"><button class="icon" data-act="play" data-i="${i}" title="Hør">🔊</button>${RP.speech.sttOK ? `<button class="icon" data-act="speak" data-i="${i}" title="Si ordet (V)">🎤</button>` : ''}</div>
+          <div class="vres" id="vres${i}"></div>
+        </div>`).join('')}</div>
+      <div class="sec-foot"><button class="btn primary" data-act="next">Lagre ordene og fortsett ${kbd('N')}</button></div>`;
+    RP.ui.keys([['↑ ↓', 'Velg'], ['Space', 'Hør'], ['V', 'Si ordet'], ['N', 'Neste']]);
+  },
+  select(i) { this.sel = (i + this.L.vocab.length) % this.L.vocab.length; $$('.vcard').forEach((n, j) => n.classList.toggle('sel', j === this.sel)); $$('.vcard')[this.sel].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
+  play(i) { this.select(i); say(this.L.vocab[i][0]); },
+  async speak(i) {
+    this.select(i); const pct = await RP.speakCheck(this.L.vocab[i][0], $('#vres' + i));
+    if (pct >= 80 && !this.rewarded.has(i)) { this.rewarded.add(i); RP.addXP(2, 'Uttale'); }
+  },
+  act(a, el) {
+    const i = +el.dataset.i;
+    if (a === 'vsel') this.play(i);
+    if (a === 'play') { this.play(i); return; }
+    if (a === 'speak') this.speak(i);
+    if (a === 'next') { RP.srsAdd(this.L.id, this.L.vocab); RP.views.lesson.finish(10); }
+  },
+  key(e) {
+    const k = e.key.toLowerCase();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { this.select(this.sel + 1); return true; }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { this.select(this.sel - 1); return true; }
+    if (e.key === ' ' || e.key === 'Enter') { this.play(this.sel); return true; }
+    if (k === 'v') { this.speak(this.sel); return true; }
+    if (k === 'n') { this.act('next', { dataset: {} }); return true; }
+  }
+};
+
+/* ---------- Grammatikk ---------- */
+RP.sections.grammar = {
+  render(L) {
+    this.L = L;
+    $('#sec').innerHTML = `<div class="grammar scroll-paper"><h2>${E(L.grammar.title)}</h2>${L.grammar.html}
+      <p class="muted small">🔊 Klikk på russisk tekst i tabellen for å høre den.</p></div>
+      <div class="sec-foot"><button class="btn primary" data-act="next">Klar for quiz! ${kbd('N')}</button></div>`;
+    $$('#sec td, #sec .grammar b').forEach(td => { if (CYR.test(td.textContent)) { td.classList.add('speakable'); td.dataset.act = 'say'; } });
+    RP.ui.keys([['N', 'Til quiz'], ['⇧ ←', 'Forrige del']]);
+  },
+  act(a, el) {
+    if (a === 'say') say(el.textContent.replace(/[^\p{L}\s\-.,!?]/gu, ''));
+    if (a === 'next') RP.views.lesson.finish(10);
+  },
+  key(e) { if (e.key.toLowerCase() === 'n' || e.key === 'Enter') { this.act('next'); return true; } }
+};
+
+/* ---------- Quiz ---------- */
+const tokens = s => s.replace(/[.,!?«»:;–]/g, ' ').split(/\s+/).filter(Boolean);
+RP.buildQuiz = L => {
+  const items = L.quiz.map(([q, c, ...w]) => ({ type: 'mc', q, options: RP.shuffle([c, ...w]), correct: c }));
+  const V = RP.shuffle(L.vocab), pool = L.vocab;
+  const others = (val, idx) => RP.shuffle([...new Set(pool.map(v => v[idx]).filter(x => x !== val))]).slice(0, 3);
+  V.slice(0, 3).forEach(([ru, no]) => items.push({ type: 'mc', q: 'Hva betyr dette?', big: ru, say: ru, options: RP.shuffle([no, ...others(no, 1)]), correct: no }));
+  V.slice(3, 5).forEach(([ru, no]) => items.push({ type: 'mc', q: `Hvordan sier man «${no}» på russisk?`, options: RP.shuffle([ru, ...others(ru, 0)]), correct: ru }));
+  V.slice(5, 7).forEach(([ru]) => items.push({ type: 'listen', q: 'Lytt og velg ordet du hører', say: ru, options: RP.shuffle([ru, ...others(ru, 0)]), correct: ru }));
+  const [tru, tno] = V[7] || V[0];
+  items.push({ type: 'type', q: `Skriv på russisk: «${tno}»`, answer: tru });
+  const line = RP.shuffle(L.dialog.filter(d => { const n = tokens(d[1]).length; return n >= 3 && n <= 7; }))[0];
+  const out = RP.shuffle(items);
+  if (line) out.push({ type: 'order', q: 'Sett ordene i riktig rekkefølge', no: line[2], answer: tokens(line[1]), pool: RP.shuffle(tokens(line[1]).map((w, i) => ({ w, i }))) });
+  return out;
+};
+
+RP.sections.quiz = {
+  render(L) {
+    this.L = L; this.items = RP.buildQuiz(L); this.i = 0; this.correct = 0; this.combo = 0; this.maxCombo = 0;
+    this.show();
+  },
+  show() {
+    const it = this.items[this.i]; this.answered = false; this.picked = [];
+    const n = this.items.length, opt = (o, k) => `<button class="opt" data-act="pick" data-k="${k}">${kbd(k + 1)}<span><b>${E(o)}</b>${CYR.test(o) ? tr(o) : ''}</span></button>`;
+    let body = '';
+    if (it.type === 'mc' || it.type === 'listen') {
+      body = (it.big ? `<div class="bigword" data-act="say">${E(it.big)}${tr(it.big)}</div>` : '') +
+        (it.type === 'listen' ? `<button class="btn big listenbtn" data-act="say">🔊 Spill av ${kbd('Space')}</button>` : '') +
+        `<div class="opts">${it.options.map(opt).join('')}</div>`;
+    } else if (it.type === 'type') {
+      body = `<input id="qin" class="answer" autocomplete="off" spellcheck="false" placeholder="Skriv kyrillisk eller latinsk (f.eks. spasibo)…">`;
+    } else if (it.type === 'order') {
+      body = `<p class="no-sent">«${E(it.no)}»</p><div class="built" id="built"></div>
+        <div class="opts tokens">${it.pool.map((t, k) => `<button class="tok" data-act="tok" data-k="${k}">${kbd(k + 1)} ${E(t.w)}</button>`).join('')}</div>`;
+    }
+    $('#sec').innerHTML = `<div class="quiz">
+      <div class="qbar"><div class="bar"><i style="width:${this.i / n * 100}%"></i></div><span>${this.i + 1}/${n}</span>
+        <span class="combo ${this.combo >= 2 ? 'on' : ''}">🔥 Combo ×${this.combo}</span></div>
+      <div class="qcard"><h2>${E(it.q)}</h2>${body}</div>
+      <div class="feedback" id="fb"></div></div>`;
+    if (it.type === 'type') setTimeout(() => $('#qin').focus(), 30);
+    if (it.say && it.type === 'listen') setTimeout(() => say(it.say), 250);
+    RP.ui.keys(it.type === 'order' ? [['1-9', 'Velg ord'], ['⌫', 'Angre'], ['Enter', 'Sjekk']] : it.type === 'type' ? [['Enter', 'Sjekk / neste']] : [['1-4', 'Svar'], ['Space', 'Hør'], ['Enter', 'Neste']]);
+  },
+  check(ok, right) {
+    this.answered = true;
+    const it = this.items[this.i];
+    if (ok) {
+      this.correct++; this.combo++; this.maxCombo = Math.max(this.maxCombo, this.combo); RP.state.stats.quizCorrect++;
+      RP.sfx('ok'); RP.addXP(5 + Math.min(this.combo - 1, 5), this.combo >= 2 ? `Combo ×${this.combo}` : '');
+    } else { this.combo = 0; RP.sfx('bad'); $('.qcard').classList.add('shake'); }
+    const answerRu = it.type === 'order' ? it.answer.join(' ') : it.type === 'type' ? it.answer : CYR.test(it.correct) ? it.correct : (it.say || '');
+    $('#fb').className = 'feedback show ' + (ok ? 'good' : 'bad');
+    $('#fb').innerHTML = `<div><b>${ok ? ['Отлично!', 'Молодец!', 'Правильно!', 'Супер!'][Math.floor(Math.random() * 4)] + ' Riktig.' : 'Ikke helt.'}</b>
+      ${right ? `<div>Riktig svar: <b>${E(right)}</b></div>` : ''}</div>
+      <button class="btn primary" data-act="cont">Fortsett ${kbd('Enter')}</button>`;
+    if (answerRu && CYR.test(answerRu)) say(answerRu);
+  },
+  pick(k) {
+    const it = this.items[this.i]; if (this.answered || !it.options || k >= it.options.length) return;
+    const ok = it.options[k] === it.correct;
+    $$('.opt').forEach((b, j) => { b.disabled = true; if (it.options[j] === it.correct) b.classList.add('right'); else if (j === k) b.classList.add('wrong'); });
+    this.check(ok, ok ? '' : it.correct);
+  },
+  tok(k) {
+    const it = this.items[this.i]; if (this.answered || k >= it.pool.length || this.picked.includes(k)) return;
+    this.picked.push(k); this.drawBuilt();
+  },
+  drawBuilt() {
+    const it = this.items[this.i];
+    $('#built').innerHTML = this.picked.map(k => `<span class="tok in">${E(it.pool[k].w)}</span>`).join('') || '<span class="muted">Velg ord med tallene …</span>';
+    $$('.tok[data-k]').forEach(b => b.classList.toggle('used', this.picked.includes(+b.dataset.k)));
+  },
+  submit() {
+    const it = this.items[this.i];
+    if (this.answered) return this.next();
+    if (it.type === 'type') {
+      const v = $('#qin').value.trim(); if (!v) return;
+      const s = RP.similarity(v, it.answer); $('#qin').disabled = true;
+      this.check(s >= 0.8, s >= 1 ? '' : it.answer);
+    } else if (it.type === 'order') {
+      if (this.picked.length < it.pool.length) { RP.ui.toast('Bruk alle ordene først'); return; }
+      const built = this.picked.map(k => it.pool[k].w).join(' ');
+      const ok = RP.normalize(built) === RP.normalize(it.answer.join(' '));
+      this.check(ok, ok ? '' : it.answer.join(' '));
+    }
+  },
+  next() {
+    RP.speech.stop();
+    if (++this.i < this.items.length) return this.show();
+    // Resultat
+    const n = this.items.length, pct = Math.round(this.correct / n * 100), p = RP.prog(this.L.id);
+    const stars = pct >= 100 ? 3 : pct >= 80 ? 2 : pct >= 60 ? 1 : 0;
+    if (pct === 100) RP.state.stats.perfect++;
+    p.best = Math.max(p.best, pct); p.stars = Math.max(p.stars, stars); RP.save();
+    if (stars) RP.markSection(this.L.id, 'quiz', 0); else RP.checkBadges();
+    if (stars === 3) RP.ui.confetti();
+    $('#sec').innerHTML = `<div class="result ornament">
+      <h2>${stars ? 'Победа!' : 'Почти!'}</h2>
+      <div class="bigstars">${[1, 2, 3].map(s => `<span class="${s <= stars ? 'on' : ''}">★</span>`).join('')}</div>
+      <p class="big">${this.correct} av ${n} riktige (${pct} %)</p>
+      <p>Lengste combo: 🔥 ${this.maxCombo}</p>
+      ${stars ? '' : '<p class="warn">Du trenger minst 60 % for å bestå quizen. Prøv igjen!</p>'}
+      <div class="row"><button class="btn" data-act="retry">↻ Ta quizen igjen ${kbd('G')}</button>
+      <button class="btn primary" data-act="tonext">${stars ? 'Til samtalen' : 'Repeter dialogen'} ${kbd('Enter')}</button></div></div>`;
+    this.done = true; this.passed = !!stars;
+    RP.ui.keys([['G', 'Gjenta'], ['Enter', 'Videre']]);
+  },
+  act(a, el) {
+    if (a === 'pick') this.pick(+el.dataset.k);
+    if (a === 'tok') this.tok(+el.dataset.k);
+    if (a === 'say') say(this.items[this.i].say);
+    if (a === 'cont') this.next();
+    if (a === 'retry') { this.done = false; this.render(this.L); }
+    if (a === 'tonext') location.hash = `#/lesson/${this.L.id}/${this.passed ? 'roleplay' : 'dialog'}`;
+  },
+  key(e) {
+    if (this.done) {
+      if (e.key.toLowerCase() === 'g') { this.act('retry'); return true; }
+      if (e.key === 'Enter') { this.act('tonext'); return true; }
+      return;
+    }
+    const it = this.items[this.i];
+    if (e.key === 'Enter') { if (this.answered) this.next(); else this.submit(); return true; }
+    if (e.target.tagName === 'INPUT') return;
+    if (/^[1-9]$/.test(e.key)) { const k = +e.key - 1; it.type === 'order' ? this.tok(k) : this.pick(k); return true; }
+    if (e.key === 'Backspace' && it.type === 'order' && !this.answered) { this.picked.pop(); this.drawBuilt(); return true; }
+    if (e.key === ' ' && it.say) { say(it.say); return true; }
+  },
+  cleanup() { this.done = false; }
+};
+
+/* ---------- Samtale / rollespill ---------- */
+RP.sections.roleplay = {
+  render(L) {
+    this.L = L; this.rp = L.rp; this.step = -1; this.passed = 0; this.skipped = 0; this.hint = 0; this.tries = 0; this.busy = false; this.ended = false;
+    const bot = this.rp.bot;
+    $('#sec').innerHTML = `<div class="rp">
+      <div class="rp-intro ornament"><div class="avatar big g-${genderOf(bot)}">${E(bot[0])}</div>
+        <div><h2>Samtale med ${E(bot)}</h2><p>${E(this.rp.intro)}</p>
+        <p class="muted small">Svar muntlig med mikrofonen ${RP.speech.sttOK ? '' : '(ikke støttet i denne nettleseren – skriv i stedet)'} eller skriv svaret. Trenger du hjelp, trykk ${kbd('H')}.</p>
+        <button class="btn primary big" data-act="start">▶ Start samtalen ${kbd('Enter')}</button></div></div>
+      <div class="chat" id="chat"></div>
+      <div class="rp-controls" id="rpc" hidden>
+        <div class="hintbox" id="hint"></div>
+        <div class="row">
+          ${RP.speech.sttOK ? `<button class="mic" data-act="mic" id="mic" title="Snakk (Space)">🎤<small>Space</small></button>` : ''}
+          <input id="rpin" class="answer" autocomplete="off" spellcheck="false" placeholder="…eller skriv svaret her (T)">
+          <button class="btn" data-act="send">Send ${kbd('Enter')}</button>
+        </div>
+        <div class="row small-btns">
+          <button class="btn ghost" data-act="hint">💡 Hint ${kbd('H')}</button>
+          <button class="btn ghost" data-act="again">🔊 Hør igjen ${kbd('L')}</button>
+          <button class="btn ghost" data-act="trans">🇳🇴 Oversett ${kbd('O')}</button>
+          <button class="btn ghost" data-act="skip">⏭ Hopp over ${kbd('X')}</button>
+        </div>
+      </div></div>`;
+    RP.ui.keys([['Enter', 'Start']]);
+  },
+  bubble(who, html, cls = '') {
+    const d = document.createElement('div'); d.className = `msg ${who} ${cls}`;
+    d.innerHTML = who === 'bot' ? `<div class="avatar g-${genderOf(this.rp.bot)}">${E(this.rp.bot[0])}</div><div class="bubble">${html}</div>` : `<div class="bubble">${html}</div>`;
+    $('#chat').appendChild(d); d.scrollIntoView({ block: 'end', behavior: 'smooth' }); return d;
+  },
+  async nextStep() {
+    this.step++; this.hint = 0; this.tries = 0; $('#hint').innerHTML = '';
+    if (this.step >= this.rp.steps.length) return this.end();
+    const s = this.rp.steps[this.step];
+    this.bubble('bot', `<div class="ru">${E(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
+    $('#rpc').hidden = false; $('#rpin').value = '';
+    RP.ui.keys([['Space', 'Snakk'], ['T', 'Skriv'], ['H', 'Hint'], ['L', 'Hør igjen'], ['O', 'Oversett'], ['X', 'Hopp over']]);
+    await say(s.b, { gender: genderOf(this.rp.bot) });
+  },
+  async mic() {
+    if (this.busy || this.ended || this.step < 0) return;
+    if (RP.speech.listening) { RP.speech.stopListening(); return; }
+    const m = $('#mic'); m.classList.add('on'); this.busy = true;
+    const live = this.bubble('me', '<span class="rec">● Lytter …</span>', 'live');
+    try {
+      const alts = await RP.speech.listen(t => { live.querySelector('.bubble').innerHTML = `<span class="rec">● ${E(t)}</span>`; });
+      live.remove();
+      if (!alts.length) { RP.ui.toast('Hørte ingenting – prøv igjen'); }
+      else this.answer(alts);
+    } catch (err) { live.remove(); RP.ui.toast(RP.micErrorText(err)); }
+    m.classList.remove('on'); this.busy = false;
+  },
+  answer(alts) {
+    const s = this.rp.steps[this.step], r = RP.judge(alts, s);
+    const b = this.bubble('me', `<div class="ru">${E(r.text)}</div>${CYR.test(r.text) ? tr(r.text) : ''}`, r.pass ? 'ok' : 'bad');
+    if (r.pass) {
+      RP.sfx('ok'); this.passed++;
+      b.insertAdjacentHTML('beforeend', `<span class="verdict">✓</span>`);
+      $('#hint').innerHTML = `<span class="good">${['Отлично!', 'Молодец!', 'Хорошо!', 'Здорово!'][this.step % 4]}</span>` + (RP.normalize(r.text) !== RP.normalize(s.m) ? ` <span class="muted">Et annet godt svar: «${E(s.m)}»</span>` : '');
+      this.busy = true; setTimeout(() => { this.busy = false; this.nextStep(); }, 1300);
+    } else {
+      RP.sfx('bad'); this.tries++;
+      b.insertAdjacentHTML('beforeend', `<span class="verdict">✗</span>`);
+      $('#hint').innerHTML = `Ikke helt – prøv igjen. ${this.tries >= 2 ? 'Trykk <b>H</b> for hint.' : ''}`;
+      if (this.tries >= 3 && this.hint < 2) this.showHint(2);
+    }
+  },
+  showHint(level) {
+    const s = this.rp.steps[this.step]; this.hint = level || Math.min(2, this.hint + 1);
+    $('#hint').innerHTML = `💡 ${E(s.h)}` + (this.hint >= 2 ? `<div class="model" data-act="model">🔊 <b>${E(s.m)}</b> <span class="muted">${E(RP.translit(s.m))}</span></div>` : ` <span class="muted">(trykk H igjen for fasit)</span>`);
+    if (this.hint >= 2) say(s.m);
+  },
+  send() { const v = $('#rpin').value.trim(); if (!v || this.busy) return; $('#rpin').value = ''; this.answer([v]); },
+  skip() {
+    if (this.busy || this.step < 0) return;
+    const s = this.rp.steps[this.step]; this.skipped++;
+    this.bubble('me', `<div class="ru">${E(s.m)}</div>${tr(s.m)}`, 'skipped');
+    this.busy = true; say(s.m).then(() => { this.busy = false; this.nextStep(); });
+  },
+  end() {
+    this.ended = true; $('#rpc').hidden = true;
+    const n = this.rp.steps.length, ok = this.passed >= Math.ceil(n / 2);
+    const xp = ok ? Math.max(10, 30 - this.skipped * 8) : 0;
+    if (ok) { RP.state.stats.roleplays++; RP.save(); RP.markSection(this.L.id, 'roleplay', 0); RP.addXP(xp, 'Samtale'); }
+    const next = this.L.id < 20 && RP.isUnlocked(this.L.id + 1);
+    this.bubble('bot', `<div class="ru">${ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!'}</div><div class="no">${ok ? 'Hyggelig å snakke med deg! Vi ses!' : 'La oss prøve igjen!'}</div>`);
+    const d = document.createElement('div'); d.className = 'result ornament';
+    d.innerHTML = `<h2>${ok ? 'Samtale fullført!' : 'Nesten!'}</h2><p class="big">${this.passed}/${n} svar klarte du selv</p>
+      ${this.skipped ? `<p class="muted">Hoppet over: ${this.skipped}</p>` : ''}
+      ${!ok ? '<p class="warn">Klar minst halvparten av replikkene selv for å fullføre samtalen.</p>' : ''}
+      ${ok && !RP.prog(this.L.id).done.quiz ? '<p class="warn">Bestå quizen også for å fullføre leksjonen.</p>' : ''}
+      <div class="row"><button class="btn" data-act="restart">↻ Spill igjen ${kbd('G')}</button>
+      <button class="btn primary" data-act="finish">${next ? 'Neste leksjon →' : 'Til kartet'} ${kbd('Enter')}</button></div>`;
+    $('#chat').appendChild(d); d.scrollIntoView({ behavior: 'smooth' });
+    if (ok) RP.ui.confetti();
+    say(ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!', { gender: genderOf(this.rp.bot) });
+    RP.ui.keys([['G', 'Spill igjen'], ['Enter', 'Videre']]);
+  },
+  act(a) {
+    if (a === 'start') { $('.rp-intro button').remove(); this.nextStep(); }
+    if (a === 'mic') this.mic();
+    if (a === 'send') this.send();
+    if (a === 'hint') this.showHint();
+    if (a === 'model') say(this.rp.steps[this.step].m);
+    if (a === 'again') { const s = this.rp.steps[this.step]; s && say(s.b, { gender: genderOf(this.rp.bot) }); }
+    if (a === 'trans') { const n = $$('#chat .msg.bot .no'); n.length && (n[n.length - 1].hidden = !n[n.length - 1].hidden); }
+    if (a === 'skip') this.skip();
+    if (a === 'restart') this.render(this.L);
+    if (a === 'finish') {
+      const next = this.L.id < 20 && RP.isUnlocked(this.L.id + 1);
+      if (next) RP.mapSel = this.L.id + 1;
+      location.hash = next ? `#/lesson/${this.L.id + 1}/dialog` : '#/map';
+    }
+  },
+  key(e) {
+    const k = e.key.toLowerCase();
+    if (e.target.tagName === 'INPUT') { if (e.key === 'Enter') { this.send(); return true; } return; }
+    if (this.step < 0) { if (e.key === 'Enter') { this.act('start'); return true; } return; }
+    if (this.ended) { if (k === 'g') { this.act('restart'); return true; } if (e.key === 'Enter') { this.act('finish'); return true; } return; }
+    if (e.key === ' ') { this.mic(); return true; }
+    if (k === 't') { $('#rpin').focus(); return true; }
+    if (k === 'h') { this.showHint(); return true; }
+    if (k === 'l') { this.act('again'); return true; }
+    if (k === 'o') { this.act('trans'); return true; }
+    if (k === 'x') { this.skip(); return true; }
+  }
+};
+
+/* ================= REPETISJON ================= */
+RP.views.review = {
+  render(practice) {
+    const due = RP.shuffle(RP.srsDue()).slice(0, 20);
+    this.queue = due.length ? due : practice ? RP.shuffle(Object.entries(RP.state.srs).map(([ru, c]) => ({ ru, ...c }))).slice(0, 10) : [];
+    this.count = 0; this.practice = !due.length;
+    if (!this.queue.length) {
+      const total = Object.keys(RP.state.srs).length;
+      $('#main').innerHTML = `<section class="center-card ornament"><h1>🃏 Repetisjon</h1>
+        ${total ? `<p>Ingen kort å repetere akkurat nå – godt jobbet! Du har <b>${total}</b> ord i bunken.</p>
+        <button class="btn primary big" data-act="practice">Øv på 10 tilfeldige ord ${kbd('Enter')}</button>`
+          : `<p>Bunken er tom. Fullfør ordforrådet i en leksjon for å legge til ord.</p><a class="btn primary" href="#/map">Til kartet ${kbd('M')}</a>`}</section>`;
+      RP.ui.keys([['Enter', 'Øv likevel']]); this.empty = true; return;
+    }
+    this.empty = false; this.show();
+  },
+  show() {
+    const c = this.queue[0]; this.flipped = false; this.dir = Math.random() < 0.5 ? 'ru' : 'no';
+    const front = this.dir === 'ru' ? `<div class="ru">${E(c.ru)}</div>${tr(c.ru)}` : `<div class="no big">${E(c.no)}</div>`;
+    $('#main').innerHTML = `<section class="review">
+      <p class="muted">${this.practice ? 'Øvingsmodus' : 'Repetisjon'} · ${this.queue.length} igjen · ${this.count} gjort</p>
+      <div class="flash" id="flash" data-act="flip"><div class="face">${front}<p class="muted small">${this.dir === 'ru' ? 'Hva betyr dette?' : 'Hva heter dette på russisk?'}</p></div></div>
+      <div id="rv-res" class="vres"></div>
+      <div class="grades" id="grades" hidden>
+        <button class="btn g1" data-act="grade" data-g="1">${kbd('1')} Igjen</button>
+        <button class="btn g2" data-act="grade" data-g="2">${kbd('2')} Vanskelig</button>
+        <button class="btn g3" data-act="grade" data-g="3">${kbd('3')} Bra</button>
+        <button class="btn g4" data-act="grade" data-g="4">${kbd('4')} Lett</button></div>
+      <div class="row"><button class="btn" data-act="flip" id="flipbtn">Snu kortet ${kbd('Space')}</button>
+      ${RP.speech.sttOK ? `<button class="btn ghost" data-act="speak">🎤 Si ordet ${kbd('V')}</button>` : ''}</div></section>`;
+    if (this.dir === 'ru') say(c.ru);
+    RP.ui.keys([['Space', 'Snu'], ['1-4', 'Vurder'], ['V', 'Si ordet']]);
+  },
+  flip() {
+    if (this.flipped) return; this.flipped = true; const c = this.queue[0];
+    $('#flash').classList.add('flipped');
+    $('#flash').insertAdjacentHTML('beforeend', `<div class="back-face"><div class="ru">${E(c.ru)}</div>${tr(c.ru)}<div class="no">${E(c.no)}</div></div>`);
+    $('#grades').hidden = false; $('#flipbtn').hidden = true;
+    if (this.dir === 'no') say(c.ru);
+  },
+  grade(g) {
+    if (!this.flipped) return;
+    const c = this.queue.shift(); RP.srsGrade(c.ru, g); this.count++;
+    RP.addXP(2); RP.sfx(g > 1 ? 'ok' : 'click');
+    if (g === 1) this.queue.push(c);
+    if (this.queue.length) this.show();
+    else {
+      $('#main').innerHTML = `<section class="center-card ornament"><h1>Готово! 🎉</h1><p>Du repeterte <b>${this.count}</b> kort.</p>
+        <a class="btn primary big" href="#/map">Til kartet ${kbd('Enter')}</a></section>`;
+      this.empty = true; this.doneAll = true;
+    }
+  },
+  act(a, el) {
+    if (a === 'flip') this.flip();
+    if (a === 'grade') this.grade(+el.dataset.g);
+    if (a === 'practice') this.render(true);
+    if (a === 'speak') RP.speakCheck(this.queue[0].ru, $('#rv-res'));
+  },
+  key(e) {
+    if (this.empty) { if (e.key === 'Enter') { this.doneAll || !Object.keys(RP.state.srs).length ? location.hash = '#/map' : this.render(true); this.doneAll = false; return true; } return; }
+    if (e.key === ' ' || e.key === 'Enter') { this.flip(); return true; }
+    if (/^[1-4]$/.test(e.key)) { this.grade(+e.key); return true; }
+    if (e.key.toLowerCase() === 'v') { this.act('speak'); return true; }
+  }
+};
+
+/* ================= ALFABET ================= */
+RP.views.alphabet = {
+  render() {
+    this.sel = this.sel || 0;
+    $('#main').innerHTML = `<section class="alpha-page"><header class="page-head ornament"><h1>Кириллица</h1><p>Det kyrilliske alfabetet – 33 bokstaver. ⚠️ markerer «falske venner» som ligner latinske bokstaver.</p></header>
+      <div class="alpha">${RP.ALPHABET.map(([L, s, d, w], i) => `<button class="letter ${i === this.sel ? 'sel' : ''} ${d.includes('⚠️') ? 'false-friend' : ''}" data-act="play" data-i="${i}">
+        <span class="L">${E(L)}</span><span class="snd">${E(s)}</span><small>${E(d.replace('⚠️ ', ''))}</small><span class="ex">${E(w)}</span></button>`).join('')}</div></section>`;
+    RP.ui.keys([['← → ↑ ↓', 'Velg'], ['Space', 'Hør eksempel']]);
+  },
+  select(i) { this.sel = (i + 33) % 33; $$('.letter').forEach((n, j) => n.classList.toggle('sel', j === this.sel)); $$('.letter')[this.sel].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
+  cols() { const ls = $$('.letter'); const top = ls[0].offsetTop; return Math.max(1, ls.filter(l => l.offsetTop === top).length); },
+  act(a, el) { if (a === 'play') { this.select(+el.dataset.i); say(RP.ALPHABET[this.sel][3]); } },
+  key(e) {
+    const m = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: this.cols(), ArrowUp: -this.cols() }[e.key];
+    if (m) { this.select(this.sel + m); return true; }
+    if (e.key === ' ' || e.key === 'Enter') { say(RP.ALPHABET[this.sel][3]); return true; }
+  }
+};
+
+/* ================= PROFIL ================= */
+RP.views.profile = {
+  render() {
+    const s = RP.state, L = RP.levelInfo(), done = RP.LESSONS.filter(l => RP.isComplete(l.id)).length;
+    const sp = RP.speech;
+    $('#main').innerHTML = `<section class="profile">
+      <header class="page-head ornament"><div class="shield big">${L.lvl}</div><div><h1>${E(L.title)}</h1>
+        <p>${s.xp} XP totalt · ${L.into}/${L.need} XP til nivå ${L.lvl + 1}</p><div class="bar"><i style="width:${L.pct * 100}%"></i></div></div></header>
+      <div class="stats">
+        <div><b>🔥 ${RP.streakAlive()}</b><span>dagers streak</span></div>
+        <div><b>🗺️ ${done}/20</b><span>leksjoner</span></div>
+        <div><b>📚 ${Object.keys(s.srs).length}</b><span>ord lært</span></div>
+        <div><b>🗣️ ${s.stats.roleplays}</b><span>samtaler</span></div>
+        <div><b>🧠 ${s.stats.reviews}</b><span>repetisjoner</span></div>
+        <div><b>🎤 ${s.stats.goodSpeech}</b><span>gode uttalelser</span></div>
+      </div>
+      <h2>Merker</h2>
+      <div class="badges">${RP.BADGES.map(b => `<div class="badge ${s.badges[b.id] ? 'got' : ''}" title="${E(b.d)}"><span>${b.icon}</span><b>${E(b.no)}</b><small>${E(b.d)}</small></div>`).join('')}</div>
+      <h2>Innstillinger</h2>
+      <div class="settings">
+        <label>Dagens mål <select data-set="dailyGoal">${[20, 50, 100, 150].map(v => `<option value="${v}" ${s.dailyGoal === v ? 'selected' : ''}>${v} XP</option>`).join('')}</select></label>
+        <label>Lesehastighet <input type="range" min="0.5" max="1.2" step="0.05" value="${s.settings.rate}" data-set="rate"> <span id="ratev">${s.settings.rate}</span></label>
+        <label><input type="checkbox" data-set="translit" ${s.settings.translit ? 'checked' : ''}> Vis translitterasjon</label>
+        <label><input type="checkbox" data-set="translation" ${s.settings.translation ? 'checked' : ''}> Vis norsk oversettelse i dialoger</label>
+        <label><input type="checkbox" data-set="sound" ${s.settings.sound ? 'checked' : ''}> Lydeffekter</label>
+        <label><input type="checkbox" data-set="unlockAll" ${s.settings.unlockAll ? 'checked' : ''}> Lås opp alle leksjoner</label>
+      </div>
+      <h2>Tale i denne nettleseren</h2>
+      <ul class="diag"><li>${sp.ttsOK && sp.hasRuVoice ? '✅ Russisk opplesning tilgjengelig' : '⚠️ Ingen russisk stemme funnet – installer en russisk stemme i operativsystemet, eller bruk Chrome/Edge/Safari'}</li>
+        <li>${sp.sttOK ? '✅ Talegjenkjenning støttes' : '⚠️ Talegjenkjenning støttes ikke (Firefox). Du kan skrive svarene i stedet.'}</li></ul>
+      <button class="btn" data-act="testvoice">🔊 Test stemmen</button>
+      <h2>Fremdrift</h2>
+      <p class="muted">Alt lagres lokalt i nettleseren. Ta sikkerhetskopi eller flytt til en annen enhet:</p>
+      <div class="row"><button class="btn" data-act="export">⬇ Eksporter</button>
+        <label class="btn">⬆ Importer<input type="file" accept="application/json" data-act-change="import" hidden></label>
+        <button class="btn danger" data-act="reset">Nullstill alt</button></div>
+    </section>`;
+    $$('[data-set]').forEach(inp => inp.onchange = inp.oninput = () => {
+      const k = inp.dataset.set, v = inp.type === 'checkbox' ? inp.checked : +inp.value;
+      if (k === 'dailyGoal') s.dailyGoal = v; else s.settings[k] = v;
+      if (k === 'rate') $('#ratev').textContent = v;
+      RP.save(); RP.ui.renderTopbar();
+    });
+    $('[data-act-change="import"]').onchange = e => this.import(e.target.files[0]);
+    RP.ui.keys([['Tab', 'Naviger'], ['M', 'Kart']]);
+  },
+  import(file) {
+    if (!file) return;
+    file.text().then(t => { const d = JSON.parse(t); if (typeof d.xp !== 'number') throw 0; localStorage.setItem('govorushka_v1', t); RP.load(); RP.ui.toast('Fremdrift importert'); RP.route(); })
+      .catch(() => RP.ui.toast('Ugyldig fil'));
+  },
+  act(a) {
+    if (a === 'testvoice') say('Привет! Меня зовут Говорушка. Давай говорить по-русски!');
+    if (a === 'export') {
+      const b = new Blob([JSON.stringify(RP.state, null, 1)], { type: 'application/json' });
+      const u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = `govorushka-${RP.today()}.json`; l.click(); URL.revokeObjectURL(u);
+    }
+    if (a === 'reset' && confirm('Slette all fremdrift? Dette kan ikke angres.')) { RP.reset(); RP.route(); RP.ui.renderTopbar(); }
+  }
+};
