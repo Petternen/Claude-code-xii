@@ -4,7 +4,12 @@ window.RP = window.RP || {};
 RP.speech = (() => {
   const synth = window.speechSynthesis;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let voices = [], rec = null;
+  let voices = [], rec = null, dict = null, dictStop = null;
+  // Inne i en claude.ai-Artifact er nettleserens talegjenkjenning blokkert; bruk plattformens diktering da.
+  if (window.claude && window.claude.use) {
+    window.claude.use('dictation').then(d => { if (d) dict = d; }).catch(() => { });
+  }
+  const inArtifact = () => !!dict;
 
   const loadVoices = () => { voices = synth ? synth.getVoices().filter(v => /^ru/i.test(v.lang)) : []; };
   if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
@@ -22,7 +27,7 @@ RP.speech = (() => {
   return {
     get ttsOK() { return !!synth; },
     get hasRuVoice() { return voices.length > 0; },
-    sttOK: !!SR,
+    get sttOK() { return !!SR || !!dict; },
     speak(text, { gender = 'f', slow = false } = {}) {
       return new Promise(res => {
         if (!synth) return res();
@@ -39,6 +44,7 @@ RP.speech = (() => {
     get speaking() { return !!(synth && synth.speaking); },
     /* Lytter én gang. onInterim(text) får foreløpig tekst. Resolver med liste av alternativer. */
     listen(onInterim) {
+      if (inArtifact()) return this.listenDictation(onInterim);
       return new Promise((resolve, reject) => {
         if (!SR) return reject(new Error('unsupported'));
         this.stop();
@@ -55,8 +61,32 @@ RP.speech = (() => {
         try { rec.start(); } catch (err) { reject(err); }
       });
     },
-    stopListening() { rec && rec.stop(); },
-    get listening() { return !!rec; }
+    /* claude.ai-diktering: start() må kalles direkte fra klikk/tastetrykk, uten await før. */
+    listenDictation(onInterim) {
+      return new Promise((resolve, reject) => {
+        this.stop();
+        let text = '', done = false;
+        const offs = [];
+        const finish = () => {
+          if (done) return; done = true; dictStop = null; clearTimeout(timer);
+          offs.forEach(f => { try { f(); } catch (e) { } });
+          dict.stop().catch(() => { }).finally(() => resolve(text.trim() ? [text.trim()] : []));
+        };
+        offs.push(dict.onPartial(({ text: t }) => onInterim && onInterim((text + ' ' + t).trim())));
+        offs.push(dict.onFinal(({ text: t }) => { text += ' ' + t; setTimeout(finish, 700); }));
+        offs.push(dict.onState(({ state }) => { if (state === 'idle' && text) finish(); }));
+        const timer = setTimeout(finish, 10000);
+        dictStop = finish;
+        dict.start({ language: 'ru' }).catch(err => {
+          if (done) return; done = true; clearTimeout(timer); dictStop = null;
+          offs.forEach(f => { try { f(); } catch (e) { } });
+          const c = err && err.code;
+          reject(new Error(c === 'not_granted' ? 'not-allowed' : c === 'unavailable' ? 'dict-unavailable' : (c || 'dictation')));
+        });
+      });
+    },
+    stopListening() { rec && rec.stop(); dictStop && dictStop(); },
+    get listening() { return !!rec || !!dictStop; }
   };
 })();
 
@@ -65,5 +95,6 @@ RP.micErrorText = e => ({
   'service-not-allowed': 'Talegjenkjenning er ikke tillatt i denne nettleseren.',
   'network': 'Talegjenkjenningen trenger internett (Chrome sender lyden til Googles tjeneste).',
   'audio-capture': 'Fant ingen mikrofon.',
+  'dict-unavailable': 'Russisk diktering er ikke tilgjengelig her. Skriv svaret, eller åpne appen lokalt i Chrome/Edge.',
   'unsupported': 'Nettleseren støtter ikke talegjenkjenning. Bruk Chrome, Edge eller Safari – eller skriv svaret.'
 }[e && e.message] || 'Talegjenkjenningen feilet: ' + (e && e.message));

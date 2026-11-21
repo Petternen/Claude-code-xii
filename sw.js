@@ -1,5 +1,5 @@
 /* Service worker: appen virker offline (unntatt talegjenkjenning, som i Chrome krever nett). */
-const CACHE = 'govorushka-v2';
+const CACHE = 'govorushka-v3';
 const FILES = ['./', 'index.html', 'css/style.css', 'js/data/lessons.js', 'js/core.js', 'js/speech.js', 'js/ui.js', 'js/app.js', 'manifest.webmanifest', 'icons/icon.svg'];
 
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
