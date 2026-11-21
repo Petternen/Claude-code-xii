@@ -28,7 +28,7 @@ RP.ui = {
     $('[data-close]', m).focus();
   },
   levelUp(lvl) {
-    const t = RP.TITLES[Math.min(lvl - 1, RP.TITLES.length - 1)];
+    const t = RP.titles()[Math.min(lvl - 1, 9)];
     RP.ui.modal(`<div class="levelup"><div class="burst">⭐</div><h2>Новый уровень!</h2><p class="big">Nivå ${lvl}</p><p>Ny tittel: <b>${E(t)}</b></p></div>`);
     RP.ui.confetti();
   },
@@ -43,9 +43,10 @@ RP.ui = {
     const route = location.hash.split('/')[1] || 'map';
     const nav = (r, k, icon, label, extra = '') => `<a href="#/${r}" class="nav ${route === r ? 'on' : ''}" title="${label} (${k})"><span class="ni">${icon}</span><span class="nl">${label}</span>${kbd(k)}${extra}</a>`;
     $('#topbar').innerHTML = `
-      <a href="#/map" class="logo" title="Говорушка"><span class="matr">🪆</span><span><b>Говорушка</b><small>russisk på norsk</small></span></a>
+      <a href="#/map" class="logo" title="Говорушка"><span class="matr">${RP.skin().icon}</span><span><b>${E(RP.skin().logo)}</b><small>${E(RP.skin().sub)}</small></span></a>
       <nav>${nav('map', 'M', '🗺️', 'Kart')}${nav('review', 'R', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '')}${nav('alphabet', 'A', 'Аа', 'Alfabet')}${nav('profile', 'P', '👤', 'Profil')}</nav>
       <div class="hud">
+        <button class="skinbtn" id="skinbtn" title="Bytt tema: ${E(RP.skin().name)} (Alt+T)">🎨</button>
         <div class="streak ${st ? 'on' : ''}" title="Streak: ${st} dager på rad">🔥<b>${st}</b></div>
         <div class="goal" title="Dagens mål: ${s.daily.xp}/${s.dailyGoal} XP">
           <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="track"/><circle cx="18" cy="18" r="15" class="bar" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - goal)}"/></svg>
@@ -55,11 +56,12 @@ RP.ui = {
           <div class="lvlbar"><small>${E(L.title.split(' · ')[1])}</small><div class="bar"><i style="width:${L.pct * 100}%"></i></div></div>
         </div>
       </div>`;
+    $('#skinbtn').onclick = () => { RP.cycleSkin(); RP.route(); RP.ui.toast('🎨 Tema: ' + RP.skin().name); };
   },
   help() {
     RP.ui.modal(`<h2>⌨️ Tastatursnarveier</h2>
     <div class="helpgrid">
-      <div><h3>Overalt</h3><p>${kbd('M')} Kart · ${kbd('R')} Repetisjon · ${kbd('A')} Alfabet · ${kbd('P')} Profil · ${kbd('Esc')} Tilbake</p></div>
+      <div><h3>Overalt</h3><p>${kbd('M')} Kart · ${kbd('R')} Repetisjon · ${kbd('A')} Alfabet · ${kbd('P')} Profil · ${kbd('Esc')} Tilbake · ${kbd('Alt')}+${kbd('T')} Bytt tema</p></div>
       <div><h3>Kart</h3><p>${kbd('←')}${kbd('→')}${kbd('↑')}${kbd('↓')} Velg sted · ${kbd('Enter')} Åpne leksjon</p></div>
       <div><h3>Leksjon</h3><p>${kbd('⇧')}+${kbd('←')}/${kbd('→')} Forrige/neste del · ${kbd('1')}–${kbd('5')} med ${kbd('Alt')} hopper til del · ${kbd('N')} Fullfør del og gå videre</p></div>
       <div><h3>Dialog</h3><p>${kbd('Space')} Spill av alt/stopp · ${kbd('↑')}${kbd('↓')} Velg replikk · ${kbd('Enter')} Spill replikk · ${kbd('S')} Sakte · ${kbd('T')} Translitterasjon · ${kbd('O')} Oversettelse</p></div>
@@ -79,7 +81,7 @@ RP.views.map = {
     RP.mapSel = firstOpen;
     const s = RP.state, next = RP.lesson(firstOpen), due = RP.srsDue().length;
     let html = `<section class="hero ornament">
-      <div><h1>Добро пожаловать!</h1><p>Reisen din gjennom Russland – fra Den røde plass til Bajkal.</p></div>
+      <div><h1>${E(RP.skin().hello)}</h1><p>${E(RP.skin().tagline)}</p></div>
       <div class="hero-actions">
         <button class="btn primary big" data-act="open" data-id="${next.id}">▶ ${RP.isComplete(next.id) ? 'Øv igjen' : 'Fortsett'}: ${E(next.ru)} ${kbd('Enter')}</button>
         ${due ? `<a class="btn" href="#/review">🃏 ${due} ord å repetere ${kbd('R')}</a>` : ''}
@@ -347,7 +349,7 @@ RP.sections.quiz = {
     } else { this.combo = 0; RP.sfx('bad'); $('.qcard').classList.add('shake'); }
     const answerRu = it.type === 'order' ? it.answer.join(' ') : it.type === 'type' ? it.answer : CYR.test(it.correct) ? it.correct : (it.say || '');
     $('#fb').className = 'feedback show ' + (ok ? 'good' : 'bad');
-    $('#fb').innerHTML = `<div><b>${ok ? ['Отлично!', 'Молодец!', 'Правильно!', 'Супер!'][Math.floor(Math.random() * 4)] + ' Riktig.' : 'Ikke helt.'}</b>
+    $('#fb').innerHTML = `<div><b>${ok ? RP.skin().cheers[Math.floor(Math.random() * 4)] + ' Riktig.' : 'Ikke helt.'}</b>
       ${right ? `<div>Riktig svar: <b>${E(right)}</b></div>` : ''}</div>
       <button class="btn primary" data-act="cont">Fortsett ${kbd('Enter')}</button>`;
     if (answerRu && CYR.test(answerRu)) say(answerRu);
@@ -486,7 +488,7 @@ RP.sections.roleplay = {
     if (r.pass) {
       RP.sfx('ok'); this.passed++;
       b.insertAdjacentHTML('beforeend', `<span class="verdict">✓</span>`);
-      $('#hint').innerHTML = `<span class="good">${['Отлично!', 'Молодец!', 'Хорошо!', 'Здорово!'][this.step % 4]}</span>` + (RP.normalize(r.text) !== RP.normalize(s.m) ? ` <span class="muted">Et annet godt svar: «${E(s.m)}»</span>` : '');
+      $('#hint').innerHTML = `<span class="good">${RP.skin().cheers[this.step % 4]}</span>` + (RP.normalize(r.text) !== RP.normalize(s.m) ? ` <span class="muted">Et annet godt svar: «${E(s.m)}»</span>` : '');
       this.busy = true; setTimeout(() => { this.busy = false; this.nextStep(); }, 1300);
     } else {
       RP.sfx('bad'); this.tries++;
@@ -659,6 +661,9 @@ RP.views.profile = {
       </div>
       <h2>Merker</h2>
       <div class="badges">${RP.BADGES.map(b => `<div class="badge ${s.badges[b.id] ? 'got' : ''}" title="${E(b.d)}"><span>${b.icon}</span><b>${E(b.no)}</b><small>${E(b.d)}</small></div>`).join('')}</div>
+      <h2>Tema</h2>
+      <div class="skins">${Object.entries(RP.SKINS).map(([id, k], i) => `<button class="skincard ${s.settings.skin === id ? 'on' : ''}" data-act="skin" data-skin="${id}">
+        <span class="sk-prev sk-${id}"><i></i><i></i><i></i></span><b>${k.icon} ${E(k.name)}</b><small>${E(k.desc)}</small>${kbd(i + 1)}</button>`).join('')}</div>
       <h2>Innstillinger</h2>
       <div class="settings">
         <label>Dagens mål <select data-set="dailyGoal">${[20, 50, 100, 150].map(v => `<option value="${v}" ${s.dailyGoal === v ? 'selected' : ''}>${v} XP</option>`).join('')}</select></label>
@@ -685,14 +690,16 @@ RP.views.profile = {
       RP.save(); RP.ui.renderTopbar();
     });
     $('[data-act-change="import"]').onchange = e => this.import(e.target.files[0]);
-    RP.ui.keys([['Tab', 'Naviger'], ['M', 'Kart']]);
+    RP.ui.keys([['1-3', 'Velg tema'], ['Tab', 'Naviger'], ['M', 'Kart']]);
   },
   import(file) {
     if (!file) return;
     file.text().then(t => { const d = JSON.parse(t); if (typeof d.xp !== 'number') throw 0; localStorage.setItem('govorushka_v1', t); RP.load(); RP.ui.toast('Fremdrift importert'); RP.route(); })
       .catch(() => RP.ui.toast('Ugyldig fil'));
   },
-  act(a) {
+  key(e) { const id = Object.keys(RP.SKINS)[+e.key - 1]; if (/^[1-3]$/.test(e.key) && id) { this.act('skin', { dataset: { skin: id } }); return true; } },
+  act(a, el) {
+    if (a === 'skin') { RP.applySkin(el.dataset.skin); RP.route(); RP.ui.toast('🎨 Tema: ' + RP.skin().name); return; }
     if (a === 'testvoice') say('Привет! Меня зовут Говорушка. Давай говорить по-русски!');
     if (a === 'export') {
       const b = new Blob([JSON.stringify(RP.state, null, 1)], { type: 'application/json' });

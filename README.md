@@ -24,9 +24,17 @@ For best tale: **Chrome eller Edge** (russisk stemme + talegjenkjenning). Safari
 ## Spillelementer
 XP, 10 nivåer (fra «Новичок» til «Жар-птица»), daglig mål, streak, stjerner per leksjon, opplåsing av steder på kartet og 14 merker.
 
+## Temaer
+Det er tre GUI-temaer. Du bytter med `Alt+T`, med 🎨-knappen eller under Profil (tast `1–3`):
+| Tema | Stil | Nivåtitler |
+|---|---|---|
+| 🪆 Russisk nasjonal | Trikolor, gull, folkekunst (khokhloma), mørk modus i palekh-stil | Новичок → Жар-птица |
+| ☭ Sovjetisk brutalisme | Betong, konstruktivisme, skarpe kanter, røde stjerner | Октябрёнок → Герой труда |
+| 🎮 Gamer 1337 | Neon, pikselfont, CRT-scanlines | Нуб · n00b → 1337 · Elite |
+
 ## Tastatur
 Hele appen kan styres fra tastaturet. Trykk `?` for full oversikt.
-`M` Kart · `R` Repetisjon · `A` Alfabet · `P` Profil · `Esc` Tilbake · `⇧←/→` Forrige/neste del · `N` Fullfør del ·
+`Alt+T` Bytt tema · `M` Kart · `R` Repetisjon · `A` Alfabet · `P` Profil · `Esc` Tilbake · `⇧←/→` Forrige/neste del · `N` Fullfør del ·
 `Space` Spill av / snakk · `1–4` Svar · `H` Hint
 
 Svar kan skrives med kyrillisk eller latinske bokstaver (`privet`, `spasibo`).

@@ -63,7 +63,7 @@ const DEFAULT = () => ({
   xp: 0, daily: { date: RP.today(), xp: 0 }, streak: { count: 0, last: null }, dailyGoal: 50,
   lessons: {}, srs: {}, badges: {},
   stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0 },
-  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false }
+  settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus' }
 });
 RP.load = () => {
   let s = null;
@@ -76,12 +76,51 @@ RP.save = () => { try { localStorage.setItem(KEY, JSON.stringify(RP.state)); } c
 RP.reset = () => { RP.state = DEFAULT(); RP.save(); };
 
 /* ---------- Nivåer ---------- */
-RP.TITLES = ['Новичок · Nybegynner', 'Турист · Turist', 'Путник · Vandrer', 'Странник · Eventyrer', 'Знаток · Kjenner',
-  'Богатырь · Kjempe', 'Мастер · Mester', 'Мудрец · Vismann', 'Царь · Tsar', 'Жар-птица · Ildfuglen'];
+/* ---------- Temaer (skins) ---------- */
+RP.SKINS = {
+  rus: {
+    name: 'Russisk nasjonal', icon: '🪆', logo: 'Говорушка', sub: 'russisk på norsk', color: '#b3202a',
+    hello: 'Добро пожаловать!', tagline: 'Reisen din gjennom Russland – fra Den røde plass til Bajkal.',
+    desc: 'Trikolor, gull og folkekunst (khokhloma)',
+    cheers: ['Отлично!', 'Молодец!', 'Правильно!', 'Здорово!'],
+    titles: ['Новичок · Nybegynner', 'Турист · Turist', 'Путник · Vandrer', 'Странник · Eventyrer', 'Знаток · Kjenner',
+      'Богатырь · Kjempe', 'Мастер · Mester', 'Мудрец · Vismann', 'Царь · Tsar', 'Жар-птица · Ildfuglen']
+  },
+  sov: {
+    name: 'Sovjetisk brutalisme', icon: '☭', logo: 'ГОВОРУШКА', sub: 'folkets russiskkurs', color: '#1a1a1a',
+    hello: 'Вперёд, товарищ!', tagline: 'Femårsplanen for russisk: fra Moskva til Bajkal. Oppfyll kvoten!',
+    desc: 'Betong, konstruktivisme og røde stjerner',
+    cheers: ['Ура!', 'Так держать!', 'Отлично, товарищ!', 'Молодец!'],
+    titles: ['Октябрёнок · Oktobrist', 'Пионер · Pioner', 'Комсомолец · Komsomoler', 'Ударник · Sjokkarbeider',
+      'Стахановец · Stakhanovist', 'Бригадир · Brigadeleder', 'Инженер · Ingeniør', 'Профессор · Professor',
+      'Академик · Akademiker', 'Герой труда · Arbeidets helt']
+  },
+  leet: {
+    name: 'Gamer 1337', icon: '🎮', logo: 'Г0В0РУШК4', sub: 'ru55i4n.exe', color: '#0a0a12',
+    hello: 'Погнали!', tagline: '> Quest: Moskva → Bajkal. 20 levels. Ingen respawn-straff_',
+    desc: 'Neon, pikselfont og CRT-scanlines',
+    cheers: ['GG!', 'Изи!', 'Красава!', 'Имба!'],
+    titles: ['Нуб · n00b', 'Казуал · Casual', 'Игрок · Gamer', 'Тащер · Carry', 'Про · Pro', 'Скиллер · Skilled',
+      'Киберспортсмен · E-sportsutøver', 'Легенда · Legend', 'Чемпион · Champion', '1337 · Elite']
+  }
+};
+RP.skin = () => RP.SKINS[RP.state.settings.skin] || RP.SKINS.rus;
+RP.titles = () => RP.skin().titles;
+RP.applySkin = id => {
+  if (id) { RP.state.settings.skin = id; RP.save(); }
+  const k = RP.SKINS[RP.state.settings.skin] ? RP.state.settings.skin : 'rus';
+  document.documentElement.dataset.skin = k;
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = RP.SKINS[k].color;
+};
+RP.cycleSkin = () => {
+  const ids = Object.keys(RP.SKINS), i = ids.indexOf(RP.state.settings.skin);
+  RP.applySkin(ids[(i + 1) % ids.length]);
+};
+
 RP.levelInfo = (xp = RP.state.xp) => {
   let lvl = 1, need = 100, base = 0;
   while (xp >= base + need) { base += need; lvl++; need = 100 + 50 * (lvl - 1); }
-  return { lvl, into: xp - base, need, pct: (xp - base) / need, title: RP.TITLES[Math.min(lvl - 1, RP.TITLES.length - 1)] };
+  return { lvl, into: xp - base, need, pct: (xp - base) / need, title: RP.titles()[Math.min(lvl - 1, 9)] };
 };
 
 RP.addXP = (n, label) => {

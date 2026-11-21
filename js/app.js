@@ -23,6 +23,7 @@
 
   document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey) return;
+    if (e.altKey && e.code === 'KeyT') { e.preventDefault(); RP.cycleSkin(); RP.route(); RP.ui.toast('🎨 Tema: ' + RP.skin().name); return; }
     if (RP.modalOpen) { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); RP.closeModal(); } return; }
     const inInput = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
     if (inInput && e.key === 'Escape') { e.target.blur(); return; }
@@ -47,6 +48,7 @@
   window.addEventListener('hashchange', RP.route);
 
   RP.load();
+  RP.applySkin();
   RP.route();
   RP.checkBadges();
 
@@ -58,6 +60,7 @@
         <p>Velkommen til <b>Говорушка</b> – et russiskkurs på norsk med 20 leksjoner fra Moskva til Bajkal.</p>
         <ul><li>🎧 Lytt til dialoger med russisk opplesning</li><li>🗣️ Snakk med figurene – mikrofonen sjekker svaret ditt</li>
         <li>🃏 Repeter ord med smart repetisjon</li><li>🔥 Samle XP, hold streaken og lås opp nye steder</li></ul>
+        <p>🎨 Velg mellom tre temaer – <b>Russisk nasjonal</b>, <b>Sovjetisk brutalisme</b> og <b>Gamer 1337</b> – med <kbd>Alt</kbd>+<kbd>T</kbd> eller under Profil.</p>
         <p>Alt kan styres med tastaturet. Trykk <kbd>?</kbd> når som helst for snarveier.</p>`);
     }
   } catch (e) { }
