@@ -678,3 +678,7 @@ body.immersive #tabbar { display: none; }
 .cantbtn { width: 100%; margin: -.4rem 0 1rem; font-size: .9rem; }
 .order-btns { display: grid; grid-template-columns: 1fr 2fr; gap: .5rem; margin-top: .9rem; }
 .order-btns .btn { width: 100%; }
+/* Ordrekkefølge: ordbrikker side om side (som i mobilapper), så Sjekk-knappen er synlig */
+.opts.tokens { display: flex; flex-wrap: wrap; gap: .5rem; }
+.opts.tokens .tok, .built .tok { flex: 0 0 auto; padding: .55rem .9rem; font-size: 1.1rem; }
+.built { min-height: 3.6rem; align-content: flex-start; }
