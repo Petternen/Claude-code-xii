@@ -4,11 +4,28 @@ window.RP = window.RP || {};
 RP.speech = (() => {
   const synth = window.speechSynthesis;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let voices = [], rec = null, dict = null, dictStop = null;
-  // Inne i en claude.ai-Artifact er nettleserens talegjenkjenning blokkert; bruk plattformens diktering da.
+  let voices = [], rec = null, dict = null, dictStop = null, ttsC = null, audioEl = null, busy = 0;
+  // Inne i en claude.ai-Artifact: plattformens diktering (nettleserens er blokkert) og Claudes stemme.
   if (window.claude && window.claude.use) {
     window.claude.use('dictation').then(d => { if (d) dict = d; }).catch(() => { });
+    window.claude.use('tts').then(t => { if (t) ttsC = t; }).catch(() => { });
   }
+  const recorded = text => RP.AUDIO && RP.AUDIO[RP.audioKey(text)];
+  const playFile = (url, slow) => new Promise(res => {
+    audioEl = new Audio(url); audioEl.playbackRate = slow ? 0.75 : 1;
+    audioEl.onended = audioEl.onerror = () => { audioEl = null; res(); };
+    audioEl.play().catch(() => { audioEl = null; res('fail'); });
+  });
+  const browserSpeak = (text, gender, slow) => new Promise(res => {
+    if (!synth) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ru-RU';
+    const p = pickVoice(gender);
+    if (p) { u.voice = p.v; u.pitch = p.pitch; }
+    u.rate = slow ? 0.6 : RP.state.settings.rate;
+    u.onend = u.onerror = () => res();
+    synth.speak(u);
+  });
   const inArtifact = () => !!dict;
 
   const loadVoices = () => { voices = synth ? synth.getVoices().filter(v => /^ru/i.test(v.lang)) : []; };
@@ -25,23 +42,33 @@ RP.speech = (() => {
   };
 
   return {
-    get ttsOK() { return !!synth; },
-    get hasRuVoice() { return voices.length > 0; },
+    get ttsOK() { return !!synth || !!ttsC; },
+    get hasRuVoice() { return voices.length > 0 || (!!ttsC && RP.state.settings.voice !== 'browser'); },
+    get claudeVoice() { return !!ttsC; },
+    get source() { return ttsC && RP.state.settings.voice !== 'browser' ? 'Claude-stemme' : voices.length ? 'Nettleserens stemme' : 'Ingen russisk stemme'; },
+    recorded,
     get sttOK() { return !!SR || !!dict; },
-    speak(text, { gender = 'f', slow = false } = {}) {
-      return new Promise(res => {
-        if (!synth) return res();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'ru-RU';
-        const p = pickVoice(gender);
-        if (p) { u.voice = p.v; u.pitch = p.pitch; }
-        u.rate = slow ? 0.6 : RP.state.settings.rate;
-        u.onend = u.onerror = () => res();
-        synth.speak(u);
-      });
+    /* Prioritet: innspilt morsmålsopptak → Claude-stemme (i Artifact) → nettleserens stemme. */
+    async speak(text, { gender = 'f', slow = false } = {}) {
+      text = RP.unstress(text);
+      const mode = RP.state.settings.voice, my = ++busy;
+      try {
+        const file = mode !== 'browser' && recorded(text);
+        if (file && (await playFile(file, slow)) !== 'fail') return;
+        if (ttsC && mode !== 'browser') {
+          const r = slow ? 0.7 : Math.min(1.5, Math.max(0.7, RP.state.settings.rate + 0.1));
+          try { await ttsC.speak(text, { language: 'ru', voice: gender === 'm' ? 'rounded' : 'airy', rate: r }); return; }
+          catch (e) { if (e && (e.code === 'viewer_stopped' || e.code === 'stopped')) return; }
+        }
+        await browserSpeak(text, gender, slow);
+      } finally { if (my === busy) busy = 0; }
     },
-    stop() { synth && synth.cancel(); },
-    get speaking() { return !!(synth && synth.speaking); },
+    stop() {
+      busy = 0; synth && synth.cancel();
+      if (audioEl) { audioEl.pause(); audioEl = null; }
+      if (ttsC) { try { ttsC.stop(); } catch (e) { } }
+    },
+    get speaking() { return busy > 0 || !!(synth && synth.speaking); },
     /* Lytter én gang. onInterim(text) får foreløpig tekst. Resolver med liste av alternativer. */
     listen(onInterim) {
       if (inArtifact()) return this.listenDictation(onInterim);
