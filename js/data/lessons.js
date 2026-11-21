@@ -49,7 +49,7 @@ RP.LESSONS = [
       <tr><td>Hei</td><td>Привет!</td><td>Здравствуйте!</td></tr>
       <tr><td>Ha det</td><td>Пока!</td><td>До свидания!</td></tr>
       <tr><td>Og du?</td><td>А у тебя?</td><td>А у вас?</td></tr></table>
-      <p class="tip">💡 Ukjent med kyrillisk? Trykk <kbd>A</kbd> for alfabetet med lyd.</p>`
+      <p class="tip">💡 Ukjent med kyrillisk? Trykk «Alfabet» i menyen nederst for alle bokstavene med lyd.</p>`
     },
     quiz: [
       ['Du møter en ny lærer. Hva sier du?', 'Здравствуйте!', 'Привет!', 'Пока!', 'Тоже.'],

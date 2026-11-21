@@ -1,6 +1,6 @@
 /* Tillegg: lesetekster, kyrillisk tastaturtrener, opptaksstudio for morsmålsbrukere og fri AI-samtale. */
 (() => {
-  const E = RP.esc, R = s => E(RP.disp(s)), kbd = k => `<kbd>${E(k)}</kbd>`;
+  const E = RP.esc, R = s => E(RP.disp(s));
   const tr = s => RP.state.settings.translit ? `<div class="tl">${E(RP.translit(RP.disp(s)))}</div>` : '';
   const say = (t, o) => RP.speech.speak(t, o);
   const q = (s, r = document) => r.querySelector(s), qa = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -15,23 +15,22 @@
       if (!r || !RP.readingUnlocked(r)) { location.hash = '#/map'; return; }
       this.r = r; this.sel = 0; this.phase = 'read'; this.showNo = false; this.token = 0;
       q('#main').innerHTML = `<article class="reading-page">
-        <header class="lesson-head ornament"><a class="back" href="#/map" title="Tilbake (Esc)">←</a><div class="lh-icon">${r.icon}</div>
+        <header class="lesson-head ornament"><a class="back" href="#/map" aria-label="Lukk">✕</a><div class="lh-icon">${r.icon}</div>
           <div class="lh-title"><h1>${R(r.ru)}</h1><p>Lesetekst · ${E(r.no)}</p></div></header>
-        <div class="toolbar"><button class="btn primary" data-act="all" id="rall">▶ Les opp alt ${kbd('Space')}</button>
-          <button class="btn toggle" data-act="no" id="rno">🇳🇴 Oversettelse ${kbd('O')}</button></div>
+        <div class="toolbar"><button class="btn primary" data-act="all" id="rall">▶ Les opp alt</button>
+          <button class="btn toggle" data-act="no" id="rno">🇳🇴 Oversettelse</button></div>
         <div class="text-paper scroll-paper hide-no" id="rtext">${r.text.map(([ru, no], i) => `<p class="sline ${i ? '' : 'sel'}" data-act="line" data-i="${i}"><span class="ru">${R(ru)}</span> <span class="no">${E(no)}</span></p>`).join('')}</div>
-        <div class="sec-foot"><button class="btn primary" data-act="quiz">Til spørsmålene ${kbd('N')}</button></div></article>`;
-      RP.ui.keys([['Space', 'Les alt'], ['↑ ↓', 'Velg'], ['Enter', 'Les setning'], ['O', 'Oversett'], ['N', 'Spørsmål']]);
+        <div class="sec-foot cta"><button class="btn primary big" data-act="quiz">Til spørsmålene →</button></div></article>`;
     },
     select(i) { this.sel = Math.max(0, Math.min(this.r.text.length - 1, i)); qa('.sline').forEach((n, j) => n.classList.toggle('sel', j === this.sel)); qa('.sline')[this.sel].scrollIntoView({ block: 'nearest', behavior: 'smooth' }); },
     async line(i, tok) { this.select(i); qa('.sline')[i].classList.add('playing'); await say(this.r.text[i][0]); const n = qa('.sline')[i]; n && n.classList.remove('playing'); return tok === this.token; },
     async all() {
       if (this.playing) return this.stop();
-      const tok = ++this.token; this.playing = true; q('#rall').innerHTML = `■ Stopp ${kbd('Space')}`;
+      const tok = ++this.token; this.playing = true; q('#rall').innerHTML = `■ Stopp`;
       for (let i = this.sel; i < this.r.text.length; i++) { if (!(await this.line(i, tok))) return; }
       this.stop();
     },
-    stop() { this.token++; this.playing = false; RP.speech.stop(); const b = q('#rall'); if (b) b.innerHTML = `▶ Les opp alt ${kbd('Space')}`; qa('.sline').forEach(n => n.classList.remove('playing')); },
+    stop() { this.token++; this.playing = false; RP.speech.stop(); const b = q('#rall'); if (b) b.innerHTML = `▶ Les opp alt`; qa('.sline').forEach(n => n.classList.remove('playing')); },
     startQuiz() {
       this.stop(); this.phase = 'quiz'; this.qi = 0; this.ok = 0;
       this.items = this.r.quiz.map(([qq, c, ...w]) => ({ q: qq, c, o: RP.shuffle([c, ...w]) }));
@@ -40,9 +39,8 @@
     showQ() {
       const it = this.items[this.qi]; this.answered = false;
       q('#main').innerHTML = `<div class="quiz"><div class="qbar"><div class="bar"><i style="width:${this.qi / this.items.length * 100}%"></i></div><span>${this.qi + 1}/${this.items.length}</span></div>
-        <div class="qcard"><h2>${E(it.q)}</h2><div class="opts">${it.o.map((o, k) => `<button class="opt" data-act="pick" data-k="${k}">${kbd(k + 1)}<span><b>${R(o)}</b></span></button>`).join('')}</div></div>
+        <div class="qcard"><h2>${E(it.q)}</h2><div class="opts">${it.o.map((o, k) => `<button class="opt" data-act="pick" data-k="${k}"><span><b>${R(o)}</b></span></button>`).join('')}</div></div>
         <div class="feedback" id="fb"></div></div>`;
-      RP.ui.keys([['1-4', 'Svar'], ['Enter', 'Neste']]);
     },
     pick(k) {
       const it = this.items[this.qi]; if (this.answered || k >= it.o.length) return; this.answered = true;
@@ -50,9 +48,13 @@
       qa('.opt').forEach((b, j) => { b.disabled = true; if (it.o[j] === it.c) b.classList.add('right'); else if (j === k) b.classList.add('wrong'); });
       RP.sfx(good ? 'ok' : 'bad');
       q('#fb').className = 'feedback show ' + (good ? 'good' : 'bad');
-      q('#fb').innerHTML = `<b>${good ? RP.skin().cheers[this.qi % 4] : 'Riktig svar: ' + R(it.c)}</b><button class="btn primary" data-act="next">Fortsett ${kbd('Enter')}</button>`;
+      q('#fb').innerHTML = `<b>${good ? RP.skin().cheers[this.qi % 4] : 'Riktig svar: ' + R(it.c)}</b><button class="btn primary big" data-act="next">${good ? 'Neste →' : 'Fortsett →'}</button>`;
+      if (good) this.auto = setTimeout(() => this.next(), 1100);
     },
     next() {
+      clearTimeout(this.auto);
+      if (!this.answered) return;
+      this.answered = false;
       if (++this.qi < this.items.length) return this.showQ();
       const pct = Math.round(this.ok / this.items.length * 100), prev = RP.state.readings[this.r.id] || 0;
       RP.state.readings[this.r.id] = Math.max(prev, pct); RP.save();
@@ -60,8 +62,7 @@
       if (pct === 100) RP.ui.confetti();
       this.phase = 'done';
       q('#main').innerHTML = `<div class="result ornament"><h2>${pct >= 50 ? 'Прочитано!' : 'Почти!'}</h2><p class="big">${this.ok} av ${this.items.length} riktige (${pct} %)</p>
-        <div class="row"><button class="btn" data-act="again">↻ Les igjen ${kbd('G')}</button><a class="btn primary" href="#/map">Til kartet ${kbd('Enter')}</a></div></div>`;
-      RP.ui.keys([['G', 'Les igjen'], ['Enter', 'Kart']]);
+        <div class="row stack"><a class="btn primary big" href="#/map">Til kartet →</a><button class="btn" data-act="again">↻ Les igjen</button></div></div>`;
     },
     act(a, el) {
       if (a === 'all') this.all();
@@ -72,24 +73,7 @@
       if (a === 'next') this.next();
       if (a === 'again') this.render([this.r.id]);
     },
-    key(e) {
-      const k = e.key.toLowerCase();
-      if (this.phase === 'read') {
-        if (e.key === ' ') { this.all(); return true; }
-        if (e.key === 'ArrowDown') { this.select(this.sel + 1); return true; }
-        if (e.key === 'ArrowUp') { this.select(this.sel - 1); return true; }
-        if (e.key === 'Enter') { this.stop(); this.line(this.sel, this.token); return true; }
-        if (k === 'o') { this.act('no', q('#rno')); return true; }
-        if (k === 'n') { this.startQuiz(); return true; }
-      } else if (this.phase === 'quiz') {
-        if (/^[1-4]$/.test(e.key)) { this.pick(+e.key - 1); return true; }
-        if (e.key === 'Enter' && this.answered) { this.next(); return true; }
-      } else {
-        if (k === 'g') { this.act('again'); return true; }
-        if (e.key === 'Enter') { location.hash = '#/map'; return true; }
-      }
-    },
-    cleanup() { this.stop(); }
+    cleanup() { this.stop(); clearTimeout(this.auto); }
   };
 
   /* ================= TASTATURTRENER (ЙЦУКЕН) ================= */
@@ -109,12 +93,11 @@
       this.words = RP.shuffle(pool).slice(0, 10).map(w => ({ w, no: no[w] || (RP.state.srs[w] || {}).no || '' }));
       this.i = 0; this.typed = ''; this.err = 0; this.chars = 0; this.t0 = 0;
       q('#main').innerHTML = `<section class="kb-page"><header class="page-head ornament"><h1>Русская клавиатура</h1>
-        <p>Skriv ordene med det russiske ЙЦУКЕН-oppsettet. Det vanlige tastaturet ditt tolkes automatisk som russisk – den norske bokstaven står i hjørnet av hver tast.</p></header>
+        <p>Lær det russiske ЙЦУКЕН-oppsettet – det samme som på russisk mobiltastatur. Trykk tastene for å skrive ordet. Den lyse tasten er neste bokstav.</p></header>
         <div class="kb-target ornament"><div class="kb-word" id="kbw"></div><div class="muted" id="kbno"></div><div class="kb-typed" id="kbt"></div>
         <div class="kb-stats" id="kbs"></div></div>
-        <div class="kb">${ROWS.map(row => `<div class="kb-row">${row.map(([c, r, n]) => `<span class="key" data-code="${c}"><b>${r}</b><small>${E(n)}</small></span>`).join('')}</div>`).join('')}
-          <div class="kb-row"><span class="key space" data-code="Space"><small>mellomrom</small></span></div></div></section>`;
-      RP.ui.keys([['A-Å', 'Skriv'], ['Tab', 'Hopp over'], ['Esc', 'Avslutt']]);
+        <div class="kb">${ROWS.map(row => `<div class="kb-row">${row.map(([c, r]) => `<button class="key" data-act="press" data-code="${c}">${r}</button>`).join('')}</div>`).join('')}</div>
+        <div class="row stack"><button class="btn" data-act="skip">⏭ Hopp over ordet</button></div></section>`;
       this.show();
     },
     cur() { return this.words[this.i]; },
@@ -128,10 +111,9 @@
       const min = this.t0 ? (Date.now() - this.t0) / 60000 : 0;
       q('#kbs').innerHTML = `⚡ ${min > 0.05 ? Math.round(this.chars / 5 / min) : '–'} ord/min · 🎯 ${this.chars + this.err ? Math.round(this.chars / (this.chars + this.err) * 100) : 100} % · ❌ ${this.err}`;
     },
-    press(code, key) {
+    press(code) {
       const c = this.cur(); if (!c) return;
-      const ch = /^[а-яё]$/i.test(key) ? key.toLowerCase() : CODE2RU[code];
-      const el = q(`.key[data-code="${code}"]`) || q(`.key[data-code="${RU2CODE[ch]}"]`);
+      const ch = CODE2RU[code], el = q(`.key[data-code="${code}"]`);
       if (!ch) return;
       if (!this.t0) this.t0 = Date.now();
       const need = c.w[this.typed.length];
@@ -147,19 +129,14 @@
       RP.state.kb.best = Math.max(RP.state.kb.best, wpm); RP.save();
       RP.addXP(Math.max(5, this.i * 2), 'Tastatur');
       q('.kb-target').innerHTML = `<h2>Готово!</h2><p class="big">⚡ ${wpm} ord/min · 🎯 ${acc} %</p><p class="muted">Rekord: ${RP.state.kb.best} ord/min · ${RP.state.kb.words} ord totalt</p>
-        <button class="btn primary" data-act="again">Ny runde ${kbd('Enter')}</button>`;
+        <button class="btn primary big" data-act="again">Ny runde →</button>`;
       this.done = true;
     },
-    act(a) { if (a === 'again') { this.done = false; this.render(); } },
-    key(e) {
-      if (e.altKey || e.ctrlKey || e.metaKey) return;
-      if (this.done) { if (e.key === 'Enter') { this.act('again'); return true; } return; }
-      if (e.key === 'Tab') { this.i++; this.typed = ''; this.show(); return true; }
-      if (e.key === 'Backspace') return true;
-      if (e.key === 'Escape') return;
-      if (CODE2RU[e.code] || /^[а-яё]$/i.test(e.key)) { this.press(e.code, e.key); return true; }
-      if (e.key.length === 1) return true; // sluk andre tegn så globale snarveier ikke trigges
-    }
+    act(a, el) {
+      if (a === 'again') { this.done = false; this.render(); }
+      if (a === 'press' && !this.done) this.press(el.dataset.code);
+      if (a === 'skip' && !this.done) { this.i++; this.typed = ''; this.show(); }
+    },
   };
 
   /* ================= OPPTAKSSTUDIO ================= */
@@ -214,19 +191,18 @@
       q('#main').innerHTML = `<section class="studio"><header class="page-head ornament"><div><h1>🎙️ Студия</h1>
         <p>For morsmålsbrukere: les inn hver replikk og hvert ord. Opptakene brukes i appen foran syntetisk stemme. ${done}/${total} ferdig (${this.rec.size} nye i denne nettleseren).</p>
         <div class="bar"><i style="width:${done / total * 100}%"></i></div></div></header>
-        <div class="toolbar"><button class="btn primary" data-act="rec">● Ta opp / stopp ${kbd('Space')}</button>
-          <button class="btn" data-act="play">▶ Spill opptak ${kbd('Enter')}</button>
-          <button class="btn" data-act="nextmiss">⏭ Neste uten opptak ${kbd('N')}</button>
-          <button class="btn toggle ${this.onlyMissing ? 'on' : ''}" data-act="filter">Bare manglende ${kbd('F')}</button>
-          <button class="btn" data-act="del">🗑 Slett opptak ${kbd('Del')}</button>
-          <button class="btn" data-act="export">⬇ Eksporter ZIP ${kbd('E')}</button></div>
+        <div class="toolbar"><button class="btn primary" data-act="rec">● Ta opp / stopp</button>
+          <button class="btn" data-act="play">▶ Spill opptak</button>
+          <button class="btn" data-act="nextmiss">⏭ Neste uten opptak</button>
+          <button class="btn toggle ${this.onlyMissing ? 'on' : ''}" data-act="filter">Bare manglende</button>
+          <button class="btn" data-act="del">🗑 Slett opptak</button>
+          <button class="btn" data-act="export">⬇ Eksporter ZIP</button></div>
         <p class="muted small" id="stmsg">Mikrofonen spør om tillatelse første gang. Studioet virker best lokalt eller på GitHub Pages i Chrome/Edge – inne i claude.ai er mikrofonopptak normalt blokkert.</p>
         <div class="studio-list">${vis.map(x => {
           const head = x.group !== g ? `<h3>${E(x.group)}</h3>` : ''; g = x.group;
           const st = this.rec.has(x.k) ? '🎙️' : RP.AUDIO && RP.AUDIO[x.k] ? '✅' : '○';
           return `${head}<div class="srow ${x.i === this.sel ? 'sel' : ''}" data-act="sel" data-i="${x.i}"><span class="st">${st}</span><span class="ru">${R(x.text)}</span>${x.who ? `<small class="muted">${E(x.who)}</small>` : ''}</div>`;
         }).join('')}</div></section>`;
-      RP.ui.keys([['↑ ↓', 'Velg'], ['Space', 'Ta opp'], ['Enter', 'Spill'], ['N', 'Neste manglende'], ['E', 'Eksporter']]);
       const s = q('.srow.sel'); s && s.scrollIntoView({ block: 'center' });
     },
     move(d) {
@@ -253,7 +229,7 @@
       };
       this.mr.start();
       const row = q('.srow.sel'); row && row.classList.add('recording');
-      q('#stmsg').innerHTML = '<span class="rec">● Tar opp … trykk Space for å stoppe</span>';
+      q('#stmsg').innerHTML = '<span class="rec">● Tar opp … trykk ● igjen for å stoppe</span>';
     },
     async play() {
       const item = this.list[this.sel];
@@ -282,17 +258,6 @@
       if (a === 'del') { const k = this.list[this.sel].k; idb.del(k).then(() => { this.rec.delete(k); this.draw(); }); }
       if (a === 'export') this.exportZip();
     },
-    key(e) {
-      const k = e.key.toLowerCase();
-      if (e.key === 'ArrowDown') { this.move(1); return true; }
-      if (e.key === 'ArrowUp') { this.move(-1); return true; }
-      if (e.key === ' ') { this.toggleRec(); return true; }
-      if (e.key === 'Enter') { this.play(); return true; }
-      if (k === 'n') { this.act('nextmiss'); return true; }
-      if (k === 'f') { this.act('filter'); return true; }
-      if (k === 'e') { this.act('export'); return true; }
-      if (e.key === 'Delete') { this.act('del'); return true; }
-    },
     cleanup() { if (this.mr && this.mr.state === 'recording') this.mr.stop(); }
   };
 
@@ -307,16 +272,15 @@
           <h2>Fri prat med ${E(L.rp.bot)}</h2>
           <p>Snakk fritt på russisk om temaet «${E(L.no)}». ${E(L.rp.bot)} (spilt av Claude) svarer kort på nivå ${lvl}, med ordene fra leksjonen, og retter feilene dine på norsk.</p>
           <p class="muted small">Krever claude.ai. Hver replikk bruker en melding fra din Claude-kvote.</p>
-          <button class="btn primary big" data-act="start">▶ Start samtalen ${kbd('Enter')}</button></div></div>
+          <button class="btn primary big" data-act="start">▶ Start samtalen</button></div></div>
         <div class="chat" id="chat"></div>
         <div class="rp-controls" id="rpc" hidden>
           <div class="hintbox" id="hint"></div>
-          <div class="row">${RP.speech.sttOK ? `<button class="mic" data-act="mic" id="mic" title="Snakk (Space)">🎤<small>Space</small></button>` : ''}
-            <input id="rpin" class="answer" autocomplete="off" spellcheck="false" placeholder="Skriv på russisk (T) …">
-            <button class="btn" data-act="send">Send ${kbd('Enter')}</button></div>
-          <div class="row small-btns"><button class="btn ghost" data-act="again">🔊 Hør igjen ${kbd('L')}</button><button class="btn ghost" data-act="trans">🇳🇴 Oversett ${kbd('O')}</button></div>
+          <div class="row">${RP.speech.sttOK ? `<button class="mic" data-act="mic" id="mic" title="Snakk">🎤</button>` : ''}
+            <form id="chatform" class="qform"><input id="rpin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="Skriv på russisk …"><button class="btn">Send</button></form></div>
+          <div class="row small-btns"><button class="btn ghost" data-act="again">🔊 Hør igjen</button><button class="btn ghost" data-act="trans">🇳🇴 Oversett</button></div>
         </div></div>`;
-      RP.ui.keys([['Enter', 'Start']]);
+      q('#chatform').onsubmit = e => { e.preventDefault(); this.act('send'); };
     },
     bubble(who, html, cls = '') {
       const d = document.createElement('div'); d.className = `msg ${who} ${cls}`;
@@ -342,7 +306,6 @@ Svar KUN med JSON: {"ru": "din replikk på russisk", "no": "norsk oversettelse a
         this.msgs.push({ role: 'bot', text: r.ru });
         this.bubble('bot', `<div class="ru">${E(r.ru)}</div>${tr(r.ru)}<div class="no" hidden>${E(r.no || '')}</div>`);
         q('#rpc').hidden = false;
-        RP.ui.keys([['Space', 'Snakk'], ['T', 'Skriv'], ['Enter', 'Send'], ['L', 'Hør igjen'], ['O', 'Oversett']]);
         say(r.ru, { gender: RP.GENDER[this.L.rp.bot] || 'f' });
       } catch (e) {
         wait.remove();
@@ -375,14 +338,5 @@ Svar KUN med JSON: {"ru": "din replikk på russisk", "no": "norsk oversettelse a
       if (a === 'again') { const m = [...this.msgs].reverse().find(x => x.role === 'bot'); m && say(m.text, { gender: RP.GENDER[this.L.rp.bot] || 'f' }); }
       if (a === 'trans') { const n = qa('#chat .msg.bot .no'); n.length && (n[n.length - 1].hidden = !n[n.length - 1].hidden); }
     },
-    key(e) {
-      const k = e.key.toLowerCase();
-      if (e.target.tagName === 'INPUT') { if (e.key === 'Enter') { this.act('send'); return true; } return; }
-      if (!this.started) { if (e.key === 'Enter') { this.act('start'); return true; } return; }
-      if (e.key === ' ') { this.mic(); return true; }
-      if (k === 't') { q('#rpin').focus(); return true; }
-      if (k === 'l') { this.act('again'); return true; }
-      if (k === 'o') { this.act('trans'); return true; }
-    }
   };
 })();
