@@ -52,6 +52,7 @@ def main():
     ap.add_argument('--out', default='.')
     ap.add_argument('--batch', type=int, default=4)
     ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--seed', type=int, default=42, help='annen seed gir en ny variant (brukes ved omgenerering av svake klipp)')
     ap.add_argument('--steps', type=int, default=16, help='diffusjonssteg (32 = modellens standard, 16 = dobbelt så raskt)')
     a = ap.parse_args()
 
@@ -101,7 +102,7 @@ def main():
         for i in range(0, len(lst), a.batch):
             chunk = lst[i:i + a.batch]
             outs = model.generate(text=[c['text'] for c in chunk], language='ru',
-                                  voice_clone_prompt=[prompts[who]] * len(chunk), seed=42,
+                                  voice_clone_prompt=[prompts[who]] * len(chunk), seed=a.seed,
                                   generation_config=OmniVoiceGenerationConfig(num_step=a.steps))
             for c, w in zip(chunk, outs):
                 wav = wav_of(w); secs += len(wav) / sr
