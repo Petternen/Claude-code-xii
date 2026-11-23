@@ -440,19 +440,20 @@ RP.sections.roleplay = {
     $('#sec').innerHTML = `<div class="rp">
       <div class="rp-intro ornament"><div class="avatar big g-${genderOf(bot)}">${E(bot[0])}</div>
         <div><h2>Samtale med ${E(bot)}</h2><p>${E(this.rp.intro)}</p>
-        ${RP.silent() ? '<p class="muted small">🔇 Lydfri modus: les replikkene og skriv svarene.</p>' : ''}
-        <p class="muted small">Svar muntlig med mikrofonen ${RP.speech.sttOK ? '' : '(ikke støttet i denne nettleseren – skriv i stedet)'} eller skriv svaret. Trenger du hjelp, trykk 💡 Hint.</p>
+        <p class="muted small">Trykk på riktig svar.${RP.silent() ? '' : RP.speech.sttOK ? ' Vil du øve uttale, kan du også si det med 🎤.' : ''} Du kan også skrive svaret selv. Verken lyd eller mikrofon er nødvendig.</p>
         <button class="btn primary big" data-act="start">▶ Start samtalen</button></div></div>
       <div class="chat" id="chat"></div>
       <div class="rp-controls" id="rpc" hidden>
         <div class="hintbox" id="hint"></div>
-        <div class="row">
-          ${RP.speech.sttOK ? `<button class="mic" data-act="mic" id="mic" title="Snakk">🎤</button>` : ''}
-          <form id="rpform" class="qform"><input id="rpin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="…eller skriv svaret her"><button class="btn">Send</button></form>
-        </div>
-        <div class="row small-btns">
+        <div class="choices" id="choices"></div>
+        <div class="row alt-input">
+          ${RP.speech.sttOK && !RP.silent() ? `<button class="mic small" data-act="mic" id="mic" title="Si svaret">🎤</button>` : ''}
+          <button class="btn ghost" data-act="typemode">⌨️ Skriv selv</button>
           <button class="btn ghost" data-act="hint">💡 Hint</button>
-          <button class="btn ghost" data-act="again">🔊 Hør igjen</button>
+        </div>
+        <form id="rpform" class="qform" hidden><input id="rpin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="Skriv svaret (kyrillisk eller latinsk)"><button class="btn">Send</button></form>
+        <div class="row small-btns">
+          ${RP.silent() ? '' : '<button class="btn ghost" data-act="again">🔊 Hør igjen</button>'}
           <button class="btn ghost" data-act="trans">🇳🇴 Oversett</button>
           <button class="btn ghost" data-act="skip">⏭ Hopp over</button>
         </div>
@@ -468,9 +469,26 @@ RP.sections.roleplay = {
     this.step++; this.hint = 0; this.tries = 0; $('#hint').innerHTML = '';
     if (this.step >= this.rp.steps.length) return this.end();
     const s = this.rp.steps[this.step];
-    this.bubble('bot', `<div class="ru">${R(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
+    const bb = this.bubble('bot', `<div class="ru">${R(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
     $('#rpc').hidden = false; $('#rpin').value = '';
+    this.drawChoices(s);
+    bb.scrollIntoView({ block: 'start', behavior: 'smooth' });
     await say(s.b, { gender: genderOf(this.rp.bot), auto: true });
+  },
+  /* Trykkbare svaralternativer: fasit + to replikker fra kurset som IKKE godkjennes for dette trinnet. */
+  drawChoices(s) {
+    const own = this.rp.steps.filter(x => x !== s).map(x => x.m);
+    const all = RP.LESSONS.flatMap(l => l.rp.steps.map(x => x.m));
+    const pool = [...new Set(RP.shuffle(own).concat(RP.shuffle(all)))].filter(m => RP.normalize(m) !== RP.normalize(s.m) && !RP.judge([m], s).pass);
+    this.choices = RP.shuffle([s.m, ...pool.slice(0, 2)]);
+    $('#choices').innerHTML = this.choices.map((c, k) => `<button class="choice" data-act="choose" data-k="${k}"><b>${R(c)}</b>${tr(c)}</button>`).join('');
+  },
+  choose(k, el) {
+    if (this.busy || this.ended || this.step < 0 || el.disabled) return;
+    const s = this.rp.steps[this.step], text = this.choices[k], ok = RP.judge([text], s).pass;
+    el.disabled = true; el.classList.add(ok ? 'right' : 'wrong');
+    if (ok) $$('#choices .choice').forEach(b => { b.disabled = true; });
+    this.answer([RP.unstress(text)]);
   },
   async mic() {
     if (this.busy || this.ended || this.step < 0) return;
@@ -531,8 +549,8 @@ RP.sections.roleplay = {
     if (ok) RP.ui.confetti();
     say(ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!', { gender: genderOf(this.rp.bot), auto: true });
   },
-  act(a) {
-    if (a === 'start') { $('.rp-intro button').remove(); this.nextStep(); }
+  act(a, el) {
+    if (a === 'start') { $('.rp').classList.add('started'); this.nextStep(); }
     if (a === 'mic') this.mic();
     if (a === 'send') this.send();
     if (a === 'hint') this.showHint();
@@ -540,6 +558,8 @@ RP.sections.roleplay = {
     if (a === 'again') { const s = this.rp.steps[this.step]; s && say(s.b, { gender: genderOf(this.rp.bot) }); }
     if (a === 'trans') { const n = $$('#chat .msg.bot .no'); n.length && (n[n.length - 1].hidden = !n[n.length - 1].hidden); }
     if (a === 'skip') this.skip();
+    if (a === 'choose') this.choose(+el.dataset.k, el);
+    if (a === 'typemode') { const f = $('#rpform'); f.hidden = !f.hidden; if (!f.hidden) $('#rpin').focus(); }
     if (a === 'restart') this.render(this.L);
     if (a === 'finish') {
       const next = this.L.id < RP.LESSONS.length && RP.isUnlocked(this.L.id + 1);
