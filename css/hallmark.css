@@ -1,0 +1,160 @@
+/* =====================================================================
+   Hallmark-temaer: Werkstatt, Solstice, Garden, Hedgerow, Dusk, Vantage
+   Basert på tokens fra github.com/Nutlope/hallmark (MIT © Hallmark contributors).
+   Oversatt til appens variabler. Brødtekstfonter uten kyrillisk er byttet ut
+   (Karla/Archivo → Golos Text, Hanken Grotesk → Manrope).
+   ===================================================================== */
+
+/* ---------- Felles for alle Hallmark-temaer: ingen folkekunst-ornamenter ---------- */
+:root:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) {
+  --orn: none; --on-accent: #fff;
+}
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) :is(.ornament::before, #topbar::after, .region-head::after) { display: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) body {
+  background: var(--bg); letter-spacing: 0;
+}
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) :is(h1, h2) { letter-spacing: var(--tracking, -0.01em); font-weight: var(--display-weight, 600); }
+/* Tekst oppå aksentfargen følger temaets «accent-ink» */
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) :is(.btn.primary, .tab.on, .flag, .toast.gold, .levelbanner, .score, .pill) { color: var(--on-accent); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .btn.primary { background: var(--red); border-color: var(--red); box-shadow: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .btn.primary kbd { display: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .region-head { color: var(--on-region, #fff); box-shadow: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .region-head h2 { color: inherit; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .node { background: var(--paper); border: var(--node-border, 3px solid var(--red)); box-shadow: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .node.done { background: var(--red); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .node.current { animation: none; box-shadow: 0 0 0 5px var(--gold-soft); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .node.sel { outline: 3px solid var(--focus, var(--red)); outline-offset: 5px; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .shield { background: var(--red); color: var(--on-accent); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .bar i { background: var(--red); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .gtable th { background: var(--ink); color: var(--bg); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .toast.xp { background: var(--gold); color: var(--on-gold, var(--ink)); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .stars, :is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .bigstars .on { color: var(--star, var(--gold-dark)); text-shadow: none; }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) #topbar { background: var(--topbar-bg); color: var(--topbar-ink); box-shadow: none; border-bottom: var(--topbar-rule, 1px solid var(--line)); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) :is(.logo, .logo b) { color: var(--topbar-ink); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .skinbtn { background: color-mix(in srgb, var(--topbar-ink) 14%, transparent); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .goal .track { stroke: color-mix(in srgb, var(--topbar-ink) 25%, transparent); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .goal .bar { stroke: var(--gold); }
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) #tabbar .nav.on { color: var(--red); }
+
+/* ---------- Werkstatt: putty, blekk, firkantede ruter, primærfarger ---------- */
+:root[data-skin="werkstatt"] {
+  --bg: oklch(84% 0.024 82); --paper: oklch(89.5% 0.018 84); --paper-2: oklch(79.5% 0.028 80);
+  --ink: oklch(18% 0.008 60); --muted: oklch(39% 0.014 62); --line: oklch(18% 0.008 60);
+  --red: oklch(46% 0.2 264); --red-dark: oklch(36% 0.18 264); --gold: oklch(85% 0.165 92); --gold-dark: oklch(58% 0.205 33); --gold-soft: oklch(85% 0.165 92 / .45);
+  --blue: oklch(46% 0.2 264); --green: oklch(18% 0.008 60); --good: oklch(46% 0.13 150); --bad: oklch(58% 0.205 33);
+  --on-accent: oklch(96% 0.012 82); --on-gold: oklch(18% 0.008 60); --focus: oklch(46% 0.2 264); --star: oklch(58% 0.205 33);
+  --topbar-bg: oklch(18% 0.008 60); --topbar-ink: oklch(96% 0.012 82); --topbar-rule: 3px solid oklch(85% 0.165 92);
+  --radius: 0; --shadow: none; --tracking: -0.005em; --display-weight: 700;
+  --font-head: 'Jost', 'Futura', sans-serif; --font-body: 'Golos Text', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light;
+}
+[data-skin="werkstatt"] *:not(svg *) { border-radius: 0 !important; }
+[data-skin="werkstatt"] :is(h1, h2, .region-head h2) { text-transform: uppercase; }
+[data-skin="werkstatt"] :is(.ornament, .vcard, .bubble, .opt, .qcard, .tab, .letter, .stats > div, .badge.got, .scroll-paper, .flash, .rp-controls, .choice, .skincard, .tok) { border: 2px solid var(--line); box-shadow: none; }
+[data-skin="werkstatt"] .btn { border: 2px solid var(--ink); background: transparent; }
+[data-skin="werkstatt"] .btn.primary { background: var(--ink); border-color: var(--ink); color: var(--on-accent); }
+[data-skin="werkstatt"] .region-head { border: 3px solid var(--ink); }
+
+/* ---------- Solstice: krem, brunt blekk, gull-hårlinjer, harde papirskygger ---------- */
+:root[data-skin="solstice"] {
+  --bg: oklch(94% 0.03 80); --paper: oklch(97% 0.02 85); --paper-2: oklch(89% 0.05 80);
+  --ink: oklch(27% 0.05 50); --muted: oklch(48% 0.06 55); --line: oklch(84% 0.06 78);
+  --red: oklch(54% 0.20 24); --red-dark: oklch(44% 0.17 26); --gold: oklch(74% 0.14 75); --gold-dark: oklch(60% 0.13 70); --gold-soft: oklch(84% 0.11 80 / .5);
+  --blue: oklch(42% 0.08 250); --green: oklch(45% 0.09 140); --good: oklch(45% 0.11 145); --bad: oklch(54% 0.20 24);
+  --on-accent: oklch(97% 0.02 85); --focus: oklch(54% 0.20 24);
+  --topbar-bg: oklch(94% 0.03 80); --topbar-ink: oklch(27% 0.05 50); --topbar-rule: 2px solid oklch(74% 0.14 75);
+  --radius: 0; --shadow: 8px 8px 0 oklch(89% 0.05 80); --tracking: -0.005em; --display-weight: 400;
+  --font-head: 'Yeseva One', ui-serif, Georgia, serif; --font-body: 'Golos Text', ui-sans-serif, sans-serif;
+  color-scheme: light;
+}
+[data-skin="solstice"] :is(.ornament, .vcard, .qcard, .scroll-paper, .flash, .rp-controls, .stats > div, .badge.got, .skincard) { border-radius: 0; border: 1px solid var(--line); }
+[data-skin="solstice"] :is(.btn, .tab, .pill) { border-radius: 999px; }
+[data-skin="solstice"] h1 { color: var(--ink); }
+[data-skin="solstice"] .region-head { border-radius: 0; }
+
+/* ---------- Garden: havrepapir, dyp grønn, bladgrønne piller ---------- */
+:root[data-skin="garden"] {
+  --bg: oklch(95.8% 0.024 90); --paper: oklch(98.4% 0.012 90); --paper-2: oklch(92.6% 0.030 90);
+  --ink: oklch(23% 0.050 152); --muted: oklch(46% 0.034 142); --line: oklch(83% 0.024 112);
+  --red: oklch(46% 0.135 142); --red-dark: oklch(36% 0.11 145); --gold: oklch(86% 0.075 128); --gold-dark: oklch(54% 0.140 46); --gold-soft: oklch(46% 0.135 142 / .14);
+  --blue: oklch(40% 0.07 220); --green: oklch(33% 0.048 150); --good: oklch(46% 0.135 142); --bad: oklch(54% 0.140 46);
+  --on-accent: oklch(97% 0.015 95); --focus: oklch(46% 0.135 142); --star: oklch(54% 0.140 46);
+  --topbar-bg: oklch(23% 0.050 152); --topbar-ink: oklch(95.8% 0.024 90);
+  --radius: 4px; --shadow: none; --tracking: -0.012em; --display-weight: 600;
+  --font-head: 'Vollkorn', ui-serif, Georgia, serif; --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: light;
+}
+[data-skin="garden"] h1 { color: var(--ink); }
+[data-skin="garden"] :is(.ornament, .vcard, .qcard, .scroll-paper, .flash, .rp-controls, .stats > div, .badge.got, .skincard, .opt, .choice) { border-radius: 4px; border: 1px solid var(--line); }
+
+/* ---------- Hedgerow: mørk løvgrønn, krem, Prata, chartreuse ---------- */
+:root[data-skin="hedgerow"] {
+  --bg: oklch(24% 0.052 158); --paper: oklch(29.5% 0.05 158); --paper-2: oklch(19.5% 0.045 158);
+  --ink: oklch(93% 0.022 88); --muted: oklch(69% 0.045 150); --line: oklch(35% 0.05 158);
+  --red: oklch(87% 0.19 118); --red-dark: oklch(46% 0.12 128); --gold: oklch(92% 0.13 118); --gold-dark: oklch(87% 0.19 118); --gold-soft: oklch(87% 0.19 118 / .18);
+  --blue: oklch(46% 0.12 128); --green: oklch(46% 0.12 128); --good: oklch(87% 0.19 118); --bad: oklch(72% 0.15 35);
+  --on-accent: oklch(22% 0.05 158); --on-region: oklch(93% 0.022 88); --focus: oklch(92% 0.13 118); --star: oklch(87% 0.19 118);
+  --topbar-bg: oklch(19.5% 0.045 158); --topbar-ink: oklch(93% 0.022 88);
+  --radius: 0; --shadow: none; --tracking: -0.005em; --display-weight: 400;
+  --font-head: 'Prata', Georgia, serif; --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+[data-skin="hedgerow"] :is(.btn, .tab, .pill) { border-radius: 999px; }
+[data-skin="hedgerow"] .region-head { background: oklch(46% 0.12 128); }
+[data-skin="hedgerow"] .node.done { background: var(--red); }
+
+/* ---------- Dusk: skifer, røkt glass, periwinkle ---------- */
+:root[data-skin="dusk"] {
+  --bg: oklch(17.5% 0.014 268); --paper: oklch(21% 0.016 268); --paper-2: oklch(25% 0.017 268);
+  --ink: oklch(96% 0.006 75); --muted: oklch(70% 0.016 262); --line: oklch(30% 0.016 266);
+  --red: oklch(77% 0.10 274); --red-dark: oklch(44% 0.13 274); --gold: oklch(83% 0.095 62); --gold-dark: oklch(83% 0.095 62); --gold-soft: oklch(77% 0.10 274 / .2);
+  --blue: oklch(44% 0.13 274); --green: oklch(45% 0.08 200); --good: oklch(78% 0.12 160); --bad: oklch(72% 0.14 25);
+  --on-accent: oklch(19% 0.035 274); --on-region: oklch(96% 0.006 75); --focus: oklch(80% 0.10 274);
+  --topbar-bg: oklch(22% 0.018 268 / 0.82); --topbar-ink: oklch(96% 0.006 75);
+  --radius: 18px; --shadow: 0 1px 0 oklch(100% 0 0 / 0.06) inset, 0 24px 48px -24px oklch(8% 0.02 268 / 0.7); --tracking: -0.022em; --display-weight: 500;
+  --font-head: 'Wix Madefor Display', ui-sans-serif, system-ui, sans-serif; --font-body: 'Wix Madefor Text', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+[data-skin="dusk"] #topbar { backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+[data-skin="dusk"] :is(.btn, .tab, .pill) { border-radius: 999px; }
+[data-skin="dusk"] :is(.ornament, .qcard, .vcard, .flash, .rp-controls, .scroll-paper) { box-shadow: var(--shadow); border-color: var(--line); }
+[data-skin="dusk"] h1 { color: var(--ink); }
+
+/* ---------- Vantage: blåsvart, stål, hårlinjer med hjørnemerker, lime ---------- */
+:root[data-skin="vantage"] {
+  --bg: oklch(13.5% 0.012 235); --paper: oklch(17% 0.014 235); --paper-2: oklch(21% 0.016 235);
+  --ink: oklch(95% 0.006 230); --muted: oklch(66% 0.016 230); --line: oklch(27% 0.014 235);
+  --red: oklch(89% 0.19 126); --red-dark: oklch(34% 0.016 235); --gold: oklch(89% 0.19 126); --gold-dark: oklch(89% 0.19 126); --gold-soft: oklch(89% 0.19 126 / .16);
+  --blue: oklch(34% 0.05 240); --green: oklch(36% 0.06 160); --good: oklch(89% 0.19 126); --bad: oklch(70% 0.16 30);
+  --on-accent: oklch(19% 0.04 126); --on-region: oklch(95% 0.006 230); --on-gold: oklch(19% 0.04 126); --focus: oklch(89% 0.19 126);
+  --topbar-bg: oklch(13.5% 0.012 235); --topbar-ink: oklch(95% 0.006 230);
+  --radius: 4px; --shadow: none; --tracking: -0.035em; --display-weight: 300;
+  --font-head: 'Geologica', ui-sans-serif, system-ui, sans-serif; --font-body: 'Geologica', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+[data-skin="vantage"] h1 { color: var(--ink); font-weight: 300; }
+[data-skin="vantage"] :is(.btn, .tab, .pill) { border-radius: 999px; }
+[data-skin="vantage"] :is(.ornament, .qcard, .vcard, .flash, .scroll-paper, .rp-controls) { position: relative; border: 1px solid var(--line); border-radius: 4px; }
+/* Hjørnemerker («corner ticks») som i Vantage */
+[data-skin="vantage"] :is(.qcard, .flash, .ornament)::after {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; border-radius: 4px;
+  background:
+    linear-gradient(var(--red), var(--red)) top left / 10px 1px no-repeat, linear-gradient(var(--red), var(--red)) top left / 1px 10px no-repeat,
+    linear-gradient(var(--red), var(--red)) bottom right / 10px 1px no-repeat, linear-gradient(var(--red), var(--red)) bottom right / 1px 10px no-repeat;
+}
+
+/* Fargeprøver i temavelgeren */
+.sk-werkstatt i:nth-child(1) { background: oklch(84% 0.024 82); } .sk-werkstatt i:nth-child(2) { background: oklch(46% 0.2 264); } .sk-werkstatt i:nth-child(3) { background: oklch(58% 0.205 33); }
+.sk-solstice i:nth-child(1) { background: oklch(94% 0.03 80); } .sk-solstice i:nth-child(2) { background: oklch(74% 0.14 75); } .sk-solstice i:nth-child(3) { background: oklch(54% 0.20 24); }
+.sk-garden i:nth-child(1) { background: oklch(95.8% 0.024 90); } .sk-garden i:nth-child(2) { background: oklch(23% 0.050 152); } .sk-garden i:nth-child(3) { background: oklch(46% 0.135 142); }
+.sk-hedgerow i:nth-child(1) { background: oklch(24% 0.052 158); } .sk-hedgerow i:nth-child(2) { background: oklch(93% 0.022 88); } .sk-hedgerow i:nth-child(3) { background: oklch(87% 0.19 118); }
+.sk-dusk i:nth-child(1) { background: oklch(17.5% 0.014 268); } .sk-dusk i:nth-child(2) { background: oklch(96% 0.006 75); } .sk-dusk i:nth-child(3) { background: oklch(77% 0.10 274); }
+.sk-vantage i:nth-child(1) { background: oklch(13.5% 0.012 235); } .sk-vantage i:nth-child(2) { background: oklch(95% 0.006 230); } .sk-vantage i:nth-child(3) { background: oklch(89% 0.19 126); }
+
+/* Regionhoder: nøytral flate med farget kant (god kontrast i alle seks temaer) */
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .region-head {
+  background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-left: 8px solid var(--rc);
+}
+:is([data-skin="werkstatt"], [data-skin="solstice"], [data-skin="garden"], [data-skin="hedgerow"], [data-skin="dusk"], [data-skin="vantage"]) .region-head span { color: var(--muted); }
+[data-skin="werkstatt"] .region-head { border: 3px solid var(--ink); border-left: 10px solid var(--rc); }
+[data-skin="hedgerow"] .region-head { background: var(--paper); }

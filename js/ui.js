@@ -677,6 +677,9 @@ RP.views.profile = {
         <li>${sp.sttOK ? '✅ Talegjenkjenning støttes' : '⚠️ Talegjenkjenning støttes ikke (Firefox). Du kan skrive svarene i stedet.'}</li></ul>
       <ul class="diag"><li>🔊 Opplesning nå: <b>${E(sp.source)}</b>${RP.AUDIO && Object.keys(RP.AUDIO).length ? ` · ${Object.keys(RP.AUDIO).length} innspilte morsmålsopptak` : ''}</li></ul>
       <div class="row"><button class="btn" data-act="testvoice">🔊 Test stemmen</button><a class="btn" href="#/studio">🎙️ Opptaksstudio for morsmålsbrukere</a></div>
+      <h2>Om appen</h2>
+      <p class="muted small">Temaene Werkstatt, Solstice, Garden, Hedgerow, Dusk og Vantage er basert på <a href="https://github.com/Nutlope/hallmark" target="_blank" rel="noopener">Hallmark</a> (MIT, © Hallmark contributors).
+      ${RP.AUDIO && Object.keys(RP.AUDIO).length ? 'Russiske stemmer er generert med <a href="https://github.com/debpalash/VoiceStudio" target="_blank" rel="noopener">VoiceStudio</a> og modellen <a href="https://huggingface.co/k2-fsa/OmniVoice" target="_blank" rel="noopener">OmniVoice</a> (k2-fsa; vekter CC-BY-NC – kun ikke-kommersiell bruk).' : ''}</p>
       <h2>Fremdrift</h2>
       <p class="muted">Alt lagres lokalt i nettleseren. Ta sikkerhetskopi eller flytt til en annen enhet:</p>
       <div class="row"><button class="btn" data-act="export">⬇ Eksporter</button>

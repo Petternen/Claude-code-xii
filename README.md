@@ -30,6 +30,14 @@ For best tale: **Chrome eller Edge** (russisk stemme + talegjenkjenning). Safari
 Rekkefølgen er: **innspilt morsmålsopptak**, så **Claude-stemme** (i claude.ai-Artifacten), så **nettleserens stemme**.
 **Opptaksstudio** (`#/studio`, lenke under Profil) lar en morsmålsbruker lese inn alle replikker, ord og lesetekster: trykk ● for å ta opp, og studioet hopper videre til neste av seg selv. Eksporter ZIP og pakk den ut i prosjektmappen. Den lager `audio/` og `js/data/audio.js`. Commit, og opptakene brukes overalt.
 
+### Genererte morsmålslignende stemmer
+`tools/generate-voices.py` genererer alle ~900 russiske replikker, ord og setninger med OmniVoice fra [VoiceStudio](https://github.com/debpalash/VoiceStudio). Hver figur får sin egen stemme (Anna, Maksim, Olga …), som klones for alle figurens replikker:
+```bash
+node tools/export-utterances.js > /tmp/utterances.json
+python tools/generate-voices.py --model <OmniVoice-mappe> --voicestudio <VoiceStudio-mappe> --items /tmp/utterances.json --out .
+```
+**Lisens:** OmniVoice-vektene er CC-BY-NC, så stemmene kan bare brukes ikke-kommersielt. Se `THIRD_PARTY.md`.
+
 ## Publisering
 - **GitHub Pages:** `.github/workflows/pages.yml` publiserer ved push til `main`. Engangsoppsett: *Settings → Pages → Source: GitHub Actions*. Da blir appen tilgjengelig på `https://<bruker>.github.io/<repo>/`
 - **claude.ai-Artifact:** gir Claude-stemme, diktering og AI-samtale
@@ -44,6 +52,10 @@ Det er tre GUI-temaer. Du bytter med 🎨-knappen øverst eller under Profil:
 | 🪆 Russisk nasjonal | Trikolor, gull, folkekunst (khokhloma), mørk modus i palekh-stil | Новичок → Жар-птица |
 | ☭ Sovjetisk brutalisme | Betong, konstruktivisme, skarpe kanter, røde stjerner | Октябрёнок → Герой труда |
 | 🎮 Gamer 1337 | Neon, pikselfont, CRT-scanlines | Нуб · n00b → 1337 · Elite |
+| 📐 Werkstatt · ☀️ Solstice · 🌿 Garden | Lyse Hallmark-temaer: verksted, krem og gull, havre og grønt | som Russisk nasjonal |
+| 🌲 Hedgerow · 🌆 Dusk · 🧭 Vantage | Mørke Hallmark-temaer: løvgrønn, skifer, blåsvart og lime | som Russisk nasjonal |
+
+De seks siste bygger på [Hallmark](https://github.com/Nutlope/hallmark) (MIT). Se `THIRD_PARTY.md`.
 
 ## Mobil først
 Appen er laget for mobil og styres bare med trykk og sveip:
