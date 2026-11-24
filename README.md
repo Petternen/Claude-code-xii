@@ -38,6 +38,8 @@ python tools/generate-voices.py --model <OmniVoice-mappe> --voicestudio <VoiceSt
 ```
 **Kvalitetssjekk:** alle klipp er transkribert med Whisper og sammenlignet med teksten. Svake klipp ble generert på nytt med andre seeds (opptil tre runder), og klipp som fortsatt ikke besto (26 enkeltord), er utelatt. For dem bruker appen Claude- eller nettleserstemme. 871 av 897 klipp er med, og snittlikheten er 98 %.
 
+**claude.ai-Artifacten** tillater ikke så mange filer, så der pakkes lydene i én pakke per leksjon med `python tools/pack-audio.py <byggemappe>`. Pakken hentes når leksjonen åpnes.
+
 **Lisens:** OmniVoice-vektene er CC-BY-NC, så stemmene kan bare brukes ikke-kommersielt. Se `THIRD_PARTY.md`.
 
 ## Publisering

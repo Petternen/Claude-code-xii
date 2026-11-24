@@ -17,7 +17,18 @@ RP.speech = (() => {
     RP.unlockAudio && RP.unlockAudio();
   };
   ['touchend', 'click'].forEach(ev => document.addEventListener(ev, unlock, { once: true, capture: true }));
-  const recorded = text => RP.AUDIO && RP.AUDIO[RP.audioKey(text)];
+  /* Lydfiler: enten egen fil (audio/x.mp3) eller «pack:NN:nøkkel», en samlet lydpakke (brukes i claude.ai-Artifacten,
+     som har et tak på antall filer). En pakke lastes i bakgrunnen; til den er klar brukes reservestemmen. */
+  const packs = {}, loading = {};
+  const loadPack = p => loading[p] || (loading[p] = fetch(`audio/packs/${p}.json`)
+    .then(r => r.ok ? r.json() : {}).then(j => (packs[p] = j)).catch(() => { loading[p] = null; return {}; }));
+  const recorded = text => {
+    const v = RP.AUDIO && RP.AUDIO[RP.audioKey(text)];
+    if (!v || !v.startsWith('pack:')) return v;
+    const [, p, k] = v.split(':');
+    if (packs[p]) return packs[p][k] ? 'data:audio/mpeg;base64,' + packs[p][k] : null;
+    loadPack(p); return null;
+  };
   const playFile = (url, slow) => new Promise(res => {
     audioEl = new Audio(url); audioEl.playbackRate = slow ? 0.75 : 1;
     audioEl.onended = () => { audioEl = null; res(); };
@@ -55,6 +66,8 @@ RP.speech = (() => {
     get claudeVoice() { return !!ttsC; },
     get source() { return ttsC && RP.state.settings.voice !== 'browser' ? 'Claude-stemme' : voices.length ? 'Nettleserens stemme' : 'Ingen russisk stemme'; },
     recorded,
+    /* Henter lydpakkene for en leksjon på forhånd, slik at opptakene er klare når man trykker. */
+    prefetch(obj) { JSON.stringify(obj).replace(/"([^"]*[а-яё][^"]*)"/gi, (m, t) => { recorded(RP.unstress(t)); return m; }); },
     get sttOK() { return !!SR || !!dict; },
     /* Prioritet: innspilt morsmålsopptak → Claude-stemme (i Artifact) → nettleserens stemme. */
     async speak(text, { gender = 'f', slow = false, auto = false } = {}) {

@@ -146,6 +146,7 @@ RP.views.lesson = {
     const L = RP.lesson(id);
     if (!L) { location.hash = '#/map'; return; }
     if (!RP.isUnlocked(L.id)) { RP.ui.toast('🔒 Leksjonen er låst'); location.hash = '#/map'; return; }
+    RP.speech.prefetch(L);
     this.L = L; this.sec = RP.SECTIONS.find(s => s.id === sec) || (sec === 'chat' && RP.ai) ? sec : 'dialog';
     const p = RP.prog(L.id);
     $('#main').innerHTML = `<article class="lesson">
