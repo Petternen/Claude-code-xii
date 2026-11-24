@@ -20,7 +20,8 @@ RP.speech = (() => {
   const recorded = text => RP.AUDIO && RP.AUDIO[RP.audioKey(text)];
   const playFile = (url, slow) => new Promise(res => {
     audioEl = new Audio(url); audioEl.playbackRate = slow ? 0.75 : 1;
-    audioEl.onended = audioEl.onerror = () => { audioEl = null; res(); };
+    audioEl.onended = () => { audioEl = null; res(); };
+    audioEl.onerror = () => { audioEl = null; res('fail'); }; // manglende/ødelagt fil → reservestemme
     audioEl.play().catch(() => { audioEl = null; res('fail'); });
   });
   const browserSpeak = (text, gender, slow) => new Promise(res => {
