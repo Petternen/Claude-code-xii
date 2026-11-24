@@ -36,6 +36,8 @@ Rekkefølgen er: **innspilt morsmålsopptak**, så **Claude-stemme** (i claude.a
 node tools/export-utterances.js > /tmp/utterances.json
 python tools/generate-voices.py --model <OmniVoice-mappe> --voicestudio <VoiceStudio-mappe> --items /tmp/utterances.json --out .
 ```
+**Kvalitetssjekk:** alle klipp er transkribert med Whisper og sammenlignet med teksten. Svake klipp ble generert på nytt med andre seeds (opptil tre runder), og klipp som fortsatt ikke besto (26 enkeltord), er utelatt. For dem bruker appen Claude- eller nettleserstemme. 871 av 897 klipp er med, og snittlikheten er 98 %.
+
 **Lisens:** OmniVoice-vektene er CC-BY-NC, så stemmene kan bare brukes ikke-kommersielt. Se `THIRD_PARTY.md`.
 
 ## Publisering
@@ -73,7 +75,7 @@ Svar kan skrives med kyrillisk eller latinske bokstaver (`privet`, `spasibo`).
 | `js/data/lessons.js`, `lessons-b1.js` | Kursinnhold A1–A2 og B1 |
 | `js/data/readings.js` | Lesetekster per region |
 | `js/data/stress.js` | Trykkordbok for A1–A2-teksten |
-| `js/data/audio.js` | Oversikt over innspilte opptak (fra opptaksstudioet) |
+| `js/data/audio.js` | Oversikt over lydfiler i `audio/` (genererte stemmer eller opptak fra studioet) |
 | `js/extra.js` | Lesetekst, tastaturtrener, opptaksstudio, fri AI-prat |
 | `js/core.js` | Lagring, translitterasjon, svarvurdering, XP/nivå/streak, merker, SRS |
 | `js/speech.js` | Web Speech API (opplesning + talegjenkjenning ru-RU) |
