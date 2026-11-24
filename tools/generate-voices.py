@@ -93,6 +93,10 @@ def main():
         prompts[who] = model.create_voice_clone_prompt(ref_audio=ref, ref_text=REF_TEXT)
 
     # 2) Generer alle klipp, gruppert per figur i batcher
+    def min_dur(t):
+        # Enkeltord blir ellers ofte estimert altfor kort og kommer ut som stillhet
+        return max(0.9, min(2.2, 0.45 + 0.085 * len(t))) if len(t.split()) <= 2 else None
+
     todo = [it for it in items if not os.path.exists(os.path.join(audio_dir, it['k'] + '.mp3'))]
     print(f'{len(items) - len(todo)} ferdige, {len(todo)} igjen', flush=True)
     t0, done, secs = time.time(), 0, 0.0
@@ -103,6 +107,7 @@ def main():
             chunk = lst[i:i + a.batch]
             outs = model.generate(text=[c['text'] for c in chunk], language='ru',
                                   voice_clone_prompt=[prompts[who]] * len(chunk), seed=a.seed,
+                                  duration=[min_dur(c['text']) for c in chunk],
                                   generation_config=OmniVoiceGenerationConfig(num_step=a.steps))
             for c, w in zip(chunk, outs):
                 wav = wav_of(w); secs += len(wav) / sr
