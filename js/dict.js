@@ -266,8 +266,9 @@
       if (!id) {
         $('#main').innerHTML = `<section class="news">
           <h1>📰 Avis · <span class="ru">Новости</span></h1>
-          <p class="muted">Utvalgte dagsaktuelle saker fra russiske medier, gjenfortalt på lett russisk med norsk oversettelse. Trykk på et ord for å slå det opp.</p>
-          ${RP.NEWS.map(n => `<a class="ncard ${read[n.id] ? 'read' : ''}" href="#/news/${n.id}">
+          <p class="muted">Utvalgte dagsaktuelle saker fra russiske og russiskspråklige medier, gjenfortalt på lett russisk med norsk oversettelse. Trykk på et ord for å slå det opp.</p>
+          <div class="ncats">${['Alle', ...new Set(RP.NEWS.map(n => n.catNo))].map(c => `<button class="chip ${(this.cat || 'Alle') === c ? 'on' : ''}" data-act="cat" data-c="${E(c)}">${E(c)}</button>`).join('')}</div>
+          ${RP.NEWS.filter(n => !this.cat || this.cat === 'Alle' || n.catNo === this.cat).map(n => `<a class="ncard ${read[n.id] ? 'read' : ''}" href="#/news/${n.id}">
             <span class="nicon">${n.icon}</span>
             <span class="nbody"><small>${E(n.catNo)} · ${fmtDate(n.date)} · ${E(n.src)}</small><b class="ru">${E(n.ru)}</b><span>${E(n.no)}</span></span>
             ${read[n.id] ? '<span class="ncheck">✓</span>' : ''}</a>`).join('')}
@@ -295,6 +296,7 @@
       }).catch(() => { });
     },
     async act(a, el) {
+      if (a === 'cat') { this.cat = el.dataset.c; this.render([]); return; }
       const n = this.n;
       if (a === 'say') RP.speech.speak(n.p[+el.dataset.i][0]);
       if (a === 'all') { for (const [ru] of n.p) { if (RP.view !== this) break; await RP.speech.speak(ru); } }

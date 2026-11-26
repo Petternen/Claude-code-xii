@@ -1,8 +1,105 @@
 /* Avisa: utvalgte dagsaktuelle saker, gjenfortalt med egne ord på lett russisk (B1) med norsk oversettelse.
    Bygger kun på opplysningene i kildens overskrift og ingress; lenken går til originalsaken.
-   Valgt bort: krig og innenrikspolitikk, for å holde kurset nøytralt. */
+   Krig og politikk: påstander tilskrives kilden («по данным Би-би-си …»). Kategorier: Krig, Politikk, Sport, Samfunn,
+   Vitenskap, Verdensrommet, Økonomi, Teknologi, Kultur. */
 window.RP = window.RP || {};
 RP.NEWS = [
+  {
+    id: 'n-laser', date: '2026-11-25', src: 'Би-би-си', url: 'https://www.bbc.com/russian/articles/cmvg240ljz15o', cat: 'Война', catNo: 'Krig', icon: '🔦',
+    ru: 'Украинский лазер впервые сбил российский дрон', no: 'Et ukrainsk laservåpen har for første gang skutt ned en russisk drone',
+    p: [
+      ['Украинская лазерная установка «Блиск» сбила российский реактивный беспилотник.', 'Det ukrainske laservåpenet «Blysk» har skutt ned en russisk jetdrevet drone.'],
+      ['Об этом сообщил советник президента Украины по технологиям Сергей Бескрестнов.', 'Det opplyste den ukrainske presidentens teknologirådgiver Serhij Beskrestnov.'],
+      ['По данным Би-би-си, это первое публично известное успешное применение лазерного оружия в бою в Украине.', 'Ifølge BBC er dette den første offentlig kjente vellykkede bruken av laservåpen i kamp i Ukraina.'],
+      ['Лазер стреляет лучом света, а не ракетой. Поэтому один выстрел стоит очень дёшево.', 'En laser skyter med en lysstråle, ikke med en rakett. Derfor koster ett skudd svært lite.'],
+      ['Дроны стали одним из главных видов оружия в войне России против Украины.', 'Droner har blitt et av de viktigste våpnene i Russlands krig mot Ukraina.']
+    ]
+  },
+  {
+    id: 'n-udary', date: '2026-11-26', src: 'Би-би-си, Медуза', url: 'https://meduza.io/news/2026/11/26/ukrainskie-voennye-nanesli-udar-po-nevinnomysskoy-gres-v-stavropolskom-krae', cat: 'Война', catNo: 'Krig', icon: '🚨',
+    ru: 'Ракеты над Киевом, дроны над югом России', no: 'Raketter over Kyiv, droner over Sør-Russland',
+    p: [
+      ['26 ноября Киев атаковали баллистическими ракетами, сообщает Би-би-си.', 'Den 26. november ble Kyiv angrepet med ballistiske raketter, melder BBC.'],
+      ['В Башкортостане и Ставропольском крае после атак дронов пострадали промышленные зоны.', 'I Basjkortostan og Stavropol-regionen ble industriområder skadet etter droneangrep.'],
+      ['Глава Ставропольского края Владимир Владимиров сообщил, что украинские дроны атаковали промышленную зону в Невинномысске.', 'Lederen for Stavropol-regionen, Vladimir Vladimirov, opplyste at ukrainske droner angrep et industriområde i Nevinnomyssk.'],
+      ['Подробностей он не раскрыл. По данным «Медузы», удар пришёлся по Невинномысской ГРЭС — большой электростанции.', 'Han ga ingen detaljer. Ifølge Meduza rammet angrepet Nevinnomyssk-kraftverket – et stort kraftverk.'],
+      ['Полномасштабная война России против Украины идёт с февраля 2022 года.', 'Russlands fullskala krig mot Ukraina har pågått siden februar 2022.']
+    ]
+  },
+  {
+    id: 'n-chibis', date: '2026-11-26', src: 'Би-би-си, Медуза', url: 'https://www.bbc.com/russian/articles/c6lykzmpvympo', cat: 'Политика', catNo: 'Politikk', icon: '⚖️',
+    ru: 'Губернатор Мурманской области арестован', no: 'Guvernøren i Murmansk oblast er arrestert',
+    p: [
+      ['Губернатора Мурманской области Андрея Чибиса задержали 23 ноября.', 'Guvernøren i Murmansk oblast, Andrej Tsjibis, ble pågrepet 23. november.'],
+      ['Суд отправил его в СИЗО — следственный изолятор.', 'En domstol satte ham i varetektsfengsel.'],
+      ['По данным «Медузы», его уволили, а дело связано с растратой миллиарда рублей.', 'Ifølge Meduza er han avsatt, og saken gjelder underslag av én milliard rubler.'],
+      ['Би-би-си пишет, что это первый действующий губернатор, которого арестовали после начала войны в Украине.', 'BBC skriver at han er den første sittende guvernøren som er arrestert siden krigen i Ukraina begynte.'],
+      ['Временно регионом руководит министр здравоохранения области Дмитрий Панычев.', 'Midlertidig ledes regionen av helseministeren i fylket, Dmitrij Panytsjev.'],
+      ['Мурманская область граничит с Норвегией.', 'Murmansk oblast grenser til Norge.']
+    ]
+  },
+  {
+    id: 'n-poshliny', date: '2026-11-25', src: 'Би-би-си, Медуза', url: 'https://www.bbc.com/russian/articles/cm62p5r047zno', cat: 'Политика', catNo: 'Politikk', icon: '🧾',
+    ru: 'США вводят новые пошлины', no: 'USA innfører ny toll',
+    p: [
+      ['США объявили о новых импортных пошлинах для 14 торговых партнёров, в том числе Китая и Евросоюза.', 'USA har kunngjort ny importtoll for 14 handelspartnere, blant dem Kina og EU.'],
+      ['Самые высокие пошлины — до 40 процентов — будут для Китая.', 'Den høyeste tollen – opptil 40 prosent – gjelder Kina.'],
+      ['Для Вьетнама пошлины составят до 35 процентов.', 'For Vietnam blir tollen opptil 35 prosent.'],
+      ['Для остальных стран ставка будет 20 или 25 процентов.', 'For de andre landene blir satsen 20 eller 25 prosent.'],
+      ['Пошлина — это налог на товары из другой страны. Из-за неё импортные товары становятся дороже.', 'Toll er en avgift på varer fra et annet land. Den gjør importerte varer dyrere.']
+    ]
+  },
+  {
+    id: 'n-senegal', date: '2026-11-24', src: 'Би-би-си', url: 'https://www.bbc.com/russian/articles/crx20lx0q47eo', cat: 'Спорт', catNo: 'Sport', icon: '⚽',
+    ru: 'Суд вернул Сенегалу победу в Кубке Африки', no: 'Domstol gir Senegal tilbake seieren i Afrikamesterskapet',
+    p: [
+      ['Спортивный арбитражный суд вернул сборной Сенегала по футболу титул победителя Кубка африканских наций 2025 года.', 'Idrettens voldgiftsrett (CAS) har gitt Senegals fotballandslag tilbake tittelen som vinner av Afrikamesterskapet 2025.'],
+      ['В январе сенегальцы выиграли финал у сборной Марокко.', 'I januar slo Senegal Marokko i finalen.'],
+      ['Но в марте Африканская конфедерация футбола засчитала Сенегалу техническое поражение и отдала победу Марокко.', 'Men i mars dømte Det afrikanske fotballforbundet Senegal til tap og ga seieren til Marokko.'],
+      ['Теперь суд решил, что чемпион — снова Сенегал.', 'Nå har domstolen bestemt at Senegal igjen er mester.']
+    ]
+  },
+  {
+    id: 'n-ovechkin', date: '2026-11-26', src: 'ТАСС', url: 'https://tass.ru/sport/28358217', cat: 'Спорт', catNo: 'Sport', icon: '🏒',
+    ru: 'Овечкин не забивает 17 матчей подряд', no: 'Ovetsjkin har ikke scoret på 17 kamper',
+    p: [
+      ['Российский хоккеист Александр Овечкин не может забить уже 17 матчей подряд.', 'Den russiske ishockeyspilleren Aleksandr Ovetsjkin har ikke scoret på 17 kamper på rad.'],
+      ['Он играет в НХЛ за клуб «Вашингтон Кэпиталз».', 'Han spiller i NHL for klubben Washington Capitals.'],
+      ['Один призёр Олимпийских игр считает, что Овечкин скоро снова начнёт забивать.', 'En olympisk medaljevinner mener at Ovetsjkin snart begynner å score igjen.'],
+      ['Овечкин — лучший снайпер в истории НХЛ.', 'Ovetsjkin er den mestscorende spilleren i NHLs historie.']
+    ]
+  },
+  {
+    id: 'n-fedor', date: '2026-11-26', src: 'ТАСС', url: 'https://tass.ru/sport/28358003', cat: 'Спорт', catNo: 'Sport', icon: '🥊',
+    ru: 'Фёдор Емельяненко хочет выйти на бой по правилам бокса', no: 'Fjodor Jemeljanenko vil kjempe etter bokseregler',
+    p: [
+      ['Известный российский боец Фёдор Емельяненко подтвердил интерес к бою по правилам бокса.', 'Den kjente russiske kampsportutøveren Fjodor Jemeljanenko bekrefter at han er interessert i en kamp etter bokseregler.'],
+      ['Он сказал, что тренируется в боксёрском зале ЦСКА.', 'Han sa at han trener i boksesalen til CSKA.'],
+      ['Емельяненко много лет выступал в смешанных единоборствах.', 'Jemeljanenko konkurrerte i mange år i mixed martial arts (MMA).'],
+      ['Он также рассказал, почему когда-то выбрал организацию Bellator, а не UFC: там разрешили выступать его товарищам по команде.', 'Han fortalte også hvorfor han en gang valgte Bellator framfor UFC: der fikk også lagkameratene hans kjempe.']
+    ]
+  },
+  {
+    id: 'n-shtraf', date: '2026-11-25', src: 'Медуза', url: 'https://meduza.io/news/2026/11/25/v-germanii-zhenschine-prisevshey-poplakat-na-detskoy-ploschadke-vypisali-shtraf', cat: 'Общество', catNo: 'Samfunn', icon: '🛝',
+    ru: 'В Германии женщину оштрафовали на детской площадке', no: 'Kvinne fikk bot på en lekeplass i Tyskland',
+    p: [
+      ['В немецком городе Гельзенкирхен женщине выписали штраф на 25 евро.', 'I den tyske byen Gelsenkirchen fikk en kvinne en bot på 25 euro.'],
+      ['Она села на детской площадке, чтобы поплакать.', 'Hun hadde satt seg ned på en lekeplass for å gråte.'],
+      ['Штраф ей выписали, потому что она была на площадке без детей.', 'Hun fikk boten fordi hun var på lekeplassen uten barn.'],
+      ['Это случилось ещё в октябре. Первой об этом написала местная газета WAZ, сообщает DW.', 'Det skjedde allerede i oktober. Lokalavisen WAZ var først ute med saken, melder DW.']
+    ]
+  },
+  {
+    id: 'n-tailand', date: '2026-11-26', src: 'Медуза', url: 'https://meduza.io/feature/2026/11/26/tailand-odno-iz-lyubimyh-mest-otdyha-rossiyan-a-esche-zdes-regulyarno-propadayut-lyudi', cat: 'Общество', catNo: 'Samfunn', icon: '🏝️',
+    ru: 'Почему в Таиланде пропадают российские туристы', no: 'Hvorfor russiske turister forsvinner i Thailand',
+    p: [
+      ['Таиланд — одно из любимых мест отдыха россиян.', 'Thailand er et av russernes favorittsteder å feriere.'],
+      ['Но, по подсчётам «Медузы», с начала 2026 года в СМИ и соцсетях было не меньше 30 сообщений о пропавших россиянах.', 'Men ifølge Meduzas opptelling har det siden starten av 2026 vært minst 30 meldinger i medier og sosiale medier om savnede russere.'],
+      ['Самая известная история случилась летом: пропали молодые брат и сестра.', 'Den mest kjente saken skjedde i sommer: en ung bror og søster forsvant.'],
+      ['Их несколько дней искали сотни волонтёров, полицейских и спасателей, но нашли убитыми в лесу.', 'Hundrevis av frivillige, politifolk og redningsarbeidere lette etter dem i flere dager, men de ble funnet drept i skogen.'],
+      ['«Медуза» объясняет, почему пропавших бывает так трудно найти.', 'Meduza forklarer hvorfor savnede kan være så vanskelige å finne.']
+    ]
+  },
   {
     id: 'n-bolid', date: '2026-11-26', src: 'ТАСС', url: 'https://tass.ru/nauka/28357457', cat: 'Наука', catNo: 'Vitenskap', icon: '☄️',
     ru: 'Яркая вспышка над Карелией была болидом', no: 'Det sterke lysglimtet over Karelen var en ildkule',
@@ -93,3 +190,5 @@ RP.NEWS = [
     ]
   }
 ];
+// Nyeste først
+RP.NEWS.sort((a, b) => b.date.localeCompare(a.date));

@@ -764,3 +764,7 @@ body.immersive #tabbar { display: none; }
 .dback { display: block; width: fit-content; margin: 2px 0 8px; color: var(--muted); text-decoration: none; font-weight: 600; }
 .art h1, .entry .ent-head h1, .dict h3, .dict h2 { font-family: var(--font-body); font-weight: 800; letter-spacing: 0; text-transform: none; }
 .art h1 { color: var(--ink); }
+.ncats { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
+.ncats::-webkit-scrollbar { display: none; }
+.ncats .chip { flex: 0 0 auto; }
+.chip.on { background: var(--red); color: #fff; border-color: var(--red); }
