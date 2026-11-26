@@ -178,7 +178,7 @@ RP.levelInfo = (xp = RP.state.xp) => {
 
 RP.addXP = (n, label) => {
   if (!n) return;
-  const s = RP.state, before = RP.levelInfo().lvl;
+  const s = RP.state, before = RP.levelInfo().lvl, openBefore = RP.unlockedCount();
   if (s.daily.date !== RP.today()) s.daily = { date: RP.today(), xp: 0 };
   const wasBelow = s.daily.xp < s.dailyGoal;
   s.xp += n; s.daily.xp += n;
@@ -192,7 +192,11 @@ RP.addXP = (n, label) => {
   RP.ui && RP.ui.toastXP(n, label);
   if (wasBelow && s.daily.xp >= s.dailyGoal) RP.ui && RP.ui.toast('🎯 Dagens mål nådd!', 'gold');
   const after = RP.levelInfo().lvl;
-  if (after > before) { RP.sfx('level'); RP.ui && RP.ui.levelUp(after); }
+  if (after > before) {
+    RP.sfx('level'); RP.ui && RP.ui.levelUp(after);
+    const opened = RP.LESSONS.filter(l => RP.isUnlocked(l.id)).slice(openBefore);
+    if (opened.length && RP.ui) RP.ui.toast(`🔓 Nye leksjoner låst opp: ${opened[0].id}–${opened[opened.length - 1].id}`, 'gold');
+  }
   RP.checkBadges();
   RP.ui && RP.ui.renderTopbar();
 };
@@ -205,8 +209,23 @@ RP.SECTIONS = [
   { id: 'roleplay', no: 'Samtale', icon: '🗣️' }
 ];
 RP.prog = id => (RP.state.lessons[id] = RP.state.lessons[id] || { done: {}, stars: 0, best: 0 });
-RP.isComplete = id => { const p = RP.state.lessons[id]; return !!(p && p.done.quiz && p.done.roleplay); };
-RP.isUnlocked = id => RP.state.settings.unlockAll || id === 1 || RP.isComplete(id - 1);
+/* En leksjon er fullført når quizen er bestått. Samtalen (tale) er valgfri bonus-XP. */
+RP.isComplete = id => { const p = RP.state.lessons[id]; return !!(p && p.done.quiz); };
+/* Opplåsing etter nivå: leksjonene åpnes i grupper på fire. Alle i en åpen gruppe kan tas i valgfri rekkefølge;
+   neste gruppe krever at spilleren når et bestemt nivå (XP fra quiz, ord, lesetekster, repetisjon, tastatur …). */
+RP.TIER_SIZE = 4;
+RP.TIER_LVL = [1, 4, 6, 7, 8, 9, 10, 11]; // ≈ å fullføre de åpne leksjonene med ~75 % riktige
+RP.tierOf = id => Math.floor((id - 1) / RP.TIER_SIZE);
+RP.lessonLevel = id => RP.TIER_LVL[Math.min(RP.tierOf(id), RP.TIER_LVL.length - 1)];
+RP.xpForLevel = lvl => { let base = 0; for (let l = 1; l < lvl; l++) base += 100 + 50 * (l - 1); return base; };
+RP.xpToUnlock = id => Math.max(0, RP.xpForLevel(RP.lessonLevel(id)) - RP.state.xp);
+RP.isUnlocked = id => {
+  const p = RP.state.lessons[id];
+  return RP.state.settings.unlockAll || RP.levelInfo().lvl >= RP.lessonLevel(id)
+    || !!(p && Object.keys(p.done).length); // allerede påbegynte leksjoner låses aldri igjen
+};
+RP.unlockedCount = () => RP.LESSONS.filter(l => RP.isUnlocked(l.id)).length;
+RP.lockMsg = id => `🔒 Nå nivå ${RP.lessonLevel(id)} for å låse opp – ${RP.xpToUnlock(id)} XP igjen. Samle XP med quiz, ord, lesetekster og repetisjon.`;
 RP.markSection = (id, sec, xp) => {
   const p = RP.prog(id), first = !p.done[sec], wasComplete = RP.isComplete(id);
   p.done[sec] = true; RP.save();
@@ -214,7 +233,8 @@ RP.markSection = (id, sec, xp) => {
   if (!wasComplete && RP.isComplete(id)) {
     RP.addXP(50, 'Leksjon fullført');
     RP.sfx('level');
-    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (id < RP.LESSONS.length ? ' Neste sted er låst opp.' : ''), 'gold');
+    const nx = id + 1;
+    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (nx <= RP.LESSONS.length && !RP.isUnlocked(nx) ? ` Nivå ${RP.lessonLevel(nx)} åpner neste leksjon (${RP.xpToUnlock(nx)} XP igjen).` : ''), 'gold');
   }
 };
 

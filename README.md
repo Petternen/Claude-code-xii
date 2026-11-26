@@ -47,7 +47,11 @@ python tools/generate-voices.py --model <OmniVoice-mappe> --voicestudio <VoiceSt
 - **claude.ai-Artifact:** gir Claude-stemme, diktering og AI-samtale
 
 ## Spillelementer
-XP, 10 nivåer (fra «Новичок» til «Жар-птица»), daglig mål, streak, stjerner per leksjon, opplåsing av steder på kartet og 14 merker.
+XP, nivåer (fra «Новичок» til «Жар-птица»), daglig mål, streak, stjerner per leksjon og merker.
+
+**Opplåsing etter nivå:** leksjonene åpnes fire og fire. Alle åpne leksjoner kan tas i valgfri rekkefølge, men neste gruppe krever et nivå (nivå 4, 6, 7, 8, 9, 10 og 11). Kravene er satt slik at man omtrent må fullføre de åpne leksjonene med rundt 75 % riktige. Man kan også samle XP med lesetekster, repetisjon, tastaturtrening eller ved å ta en quiz på nytt. Kartet viser nivåkravet og hvor mye XP som gjenstår.
+
+**Uten tale og lyd:** en leksjon er fullført når quizen er bestått. Samtalen (rollespill) er valgfri og gir bonus-XP. I lydfri modus kommer det ingen lytteoppgaver.
 
 ## Temaer
 Det er tre GUI-temaer. Du bytter med 🎨-knappen øverst eller under Profil:

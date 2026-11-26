@@ -90,6 +90,12 @@ RP.views.map = {
       const lvl = r.from >= 21 ? 'B1' : r.from >= 13 ? 'A2' : 'A1';
       html += `<section class="region" style="--rc:${r.color}"><header class="region-head"><h2>${E(r.ru)}</h2><span>${E(r.no)} · ${lvl} · ${done}/${ls.length}</span></header><div class="path">`;
       ls.forEach((l, i) => {
+        if (!RP.isUnlocked(l.id) && (l.id - 1) % RP.TIER_SIZE === 0) { // låsebanner før hver låst gruppe
+          const lv = RP.lessonLevel(l.id), have = RP.state.xp, from = RP.xpForLevel(lv - 1), to = RP.xpForLevel(lv);
+          const pct = Math.max(0, Math.min(100, Math.round((have - from) / (to - from) * 100)));
+          html += `<div class="gate"><b>🔒 Nivå ${lv}</b> låser opp leksjon ${l.id}–${Math.min(l.id + RP.TIER_SIZE - 1, RP.LESSONS.length)}
+            <div class="bar"><i style="width:${have >= from ? pct : 0}%"></i></div><small>${RP.xpToUnlock(l.id)} XP igjen</small></div>`;
+        }
         const p = RP.state.lessons[l.id], unlocked = RP.isUnlocked(l.id), complete = RP.isComplete(l.id);
         const stars = p ? p.stars : 0;
         const cls = [unlocked ? '' : 'locked', complete ? 'done' : '', l.id === firstOpen ? 'current' : '', l.boss ? 'boss' : ''].join(' ');
@@ -123,14 +129,14 @@ RP.views.map = {
       if (!ns[j].classList.contains('locked')) { RP.mapSel = ns[j].dataset.key; this.mark(); this.scroll(); RP.sfx('click'); return; }
       if (ns[j].dataset.key.startsWith('L')) break;
     }
-    RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp');
+    RP.ui.toast('🔒 Samle mer XP for å låse opp flere leksjoner');
   },
   act(a, el) {
     if (a !== 'open') return;
     const k = el.dataset.key;
     if (k.startsWith('L')) {
       const id = +k.slice(1);
-      if (!RP.isUnlocked(id)) { RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp'); RP.sfx('bad'); return; }
+      if (!RP.isUnlocked(id)) { RP.ui.toast(RP.lockMsg(id)); RP.sfx('bad'); return; }
       RP.mapSel = k; RP.mapKeep = true; location.hash = `#/lesson/${id}/dialog`;
     } else {
       const rd = RP.READINGS.find(x => x.id === k);
@@ -145,7 +151,7 @@ RP.views.lesson = {
   render([id, sec = 'dialog']) {
     const L = RP.lesson(id);
     if (!L) { location.hash = '#/map'; return; }
-    if (!RP.isUnlocked(L.id)) { RP.ui.toast('🔒 Leksjonen er låst'); location.hash = '#/map'; return; }
+    if (!RP.isUnlocked(L.id)) { RP.ui.toast(RP.lockMsg(L.id)); location.hash = '#/map'; return; }
     RP.speech.prefetch(L);
     this.L = L; this.sec = RP.SECTIONS.find(s => s.id === sec) || (sec === 'chat' && RP.ai) ? sec : 'dialog';
     const p = RP.prog(L.id);
@@ -410,7 +416,9 @@ RP.sections.quiz = {
       <p class="big">${this.correct} av ${n} riktige (${pct} %)</p>
       <p>Lengste combo: 🔥 ${this.maxCombo}</p>
       ${stars ? '' : '<p class="warn">Du trenger minst 60 % for å bestå quizen. Prøv igjen!</p>'}
-      <div class="row stack"><button class="btn primary big" data-act="tonext">${stars ? 'Til samtalen →' : 'Repeter dialogen'}</button>
+      ${stars ? '<p class="muted">Leksjonen er fullført. Samtalen er valgfri og gir bonus-XP.</p>' : ''}
+      <div class="row stack"><button class="btn primary big" data-act="tonext">${stars ? 'Til samtalen (bonus) →' : 'Repeter dialogen'}</button>
+      ${stars ? `<button class="btn" data-act="skiprp">${this.nextOpen() ? 'Hopp over · neste leksjon →' : 'Hopp over · til kartet'}</button>` : ''}
       <button class="btn" data-act="retry">↻ Ta quizen igjen</button></div></div>`;
     this.done = true; this.passed = !!stars;
   },
@@ -429,7 +437,9 @@ RP.sections.quiz = {
     if (a === 'cont') this.next();
     if (a === 'retry') { this.done = false; this.render(this.L); }
     if (a === 'tonext') location.hash = `#/lesson/${this.L.id}/${this.passed ? 'roleplay' : 'dialog'}`;
+    if (a === 'skiprp') { const n = this.nextOpen(); if (n) RP.mapSel = 'L' + n; location.hash = n ? `#/lesson/${n}/dialog` : '#/map'; }
   },
+  nextOpen() { const n = this.L.id + 1; return n <= RP.LESSONS.length && RP.isUnlocked(n) ? n : 0; },
   cleanup() { this.done = false; clearTimeout(this.auto); }
 };
 
@@ -542,8 +552,8 @@ RP.sections.roleplay = {
     const d = document.createElement('div'); d.className = 'result ornament';
     d.innerHTML = `<h2>${ok ? 'Samtale fullført!' : 'Nesten!'}</h2><p class="big">${this.passed}/${n} svar klarte du selv</p>
       ${this.skipped ? `<p class="muted">Hoppet over: ${this.skipped}</p>` : ''}
-      ${!ok ? '<p class="warn">Klar minst halvparten av replikkene selv for å fullføre samtalen.</p>' : ''}
-      ${ok && !RP.prog(this.L.id).done.quiz ? '<p class="warn">Bestå quizen også for å fullføre leksjonen.</p>' : ''}
+      ${!ok ? '<p class="warn">Klar minst halvparten av replikkene selv for å få bonus-XP. Samtalen er valgfri.</p>' : ''}
+      ${!RP.prog(this.L.id).done.quiz ? '<p class="warn">Bestå quizen for å fullføre leksjonen.</p>' : ''}
       <div class="row stack"><button class="btn primary big" data-act="finish">${next ? 'Neste leksjon →' : 'Til kartet'}</button>
       <button class="btn" data-act="restart">↻ Spill igjen</button></div>`;
     $('#chat').appendChild(d); d.scrollIntoView({ behavior: 'smooth' });

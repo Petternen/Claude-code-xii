@@ -698,3 +698,8 @@ body.immersive #tabbar { display: none; }
 .rp-controls { position: static; max-height: none; overflow: visible; margin: .4rem 0 0; border-radius: 18px; }
 .rp.started .rp-intro { display: none; }
 .rp .chat { margin-top: .4rem; }
+
+/* Nivåport på kartet: neste gruppe leksjoner krever et nivå */
+.gate { margin: 10px 4px 14px; padding: 10px 14px; border: 2px dashed var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink); text-align: center; font-size: .95rem; }
+.gate .bar { margin: 8px auto 4px; max-width: 260px; }
+.gate small { color: var(--muted); }
