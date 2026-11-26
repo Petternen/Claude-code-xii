@@ -16,3 +16,13 @@ Skal appen brukes kommersielt, må lydfilene genereres på nytt med en modell so
 
 ## Fonter
 Alle fonter lastes fra Google Fonts og er lisensiert under SIL Open Font License.
+
+## OpenRussian: glosebok
+Gloseboka (`data/dict.json`) er bygget med `tools/build-dictionary.py` fra ordboksdataene til
+[OpenRussian.org](https://en.openrussian.org) ([Badestrand/russian-dictionary](https://github.com/Badestrand/russian-dictionary)),
+lisensiert under **CC-BY-SA 4.0**. Det gjelder oppslagsord, trykk, bøyningstabeller, aspektpar og engelske glosser.
+De norske oversettelsene (`tools/dict-no.json`) er laget for denne appen og deles under samme lisens (CC-BY-SA 4.0).
+
+## Avis
+Sakene i `js/data/news.js` er gjenfortalt med egne ord på forenklet russisk ut fra overskrift og ingress hos kildene
+(TASS, Meduza, BBC Russian). Hver sak lenker til originalen. Ingen artikkeltekst er kopiert.

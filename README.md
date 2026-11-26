@@ -20,6 +20,12 @@ For best tale: **Chrome eller Edge** (russisk stemme + talegjenkjenning). Safari
   3. 📖 **Grammatikk** med tabeller du kan klikke for å høre
   4. ⚔️ **Quiz** med flervalg, lytting, skriving og ordrekkefølge, pluss combo-bonus
   5. 🗣️ **Samtale (rollespill)** der du svarer muntlig eller skriftlig, med hint og fasit
+- 📰 **Avis**: utvalgte dagsaktuelle saker fra russiske medier, gjenfortalt på lett russisk med norsk oversettelse side om side. Trykk på et ord for å se grunnform (nominativ/infinitiv), oversettelse og hvilken bøyningsform det er. Gir 15 XP per sak.
+- 📕 **Glosebok** med 2 500 oppslagsord, inspirert av Russian Dictionary+:
+  - Søk på russisk (også bøyde former), translitterert eller norsk.
+  - Trykk, bøyningstabeller (kasus, presens/futurum, preteritum, imperativ, adjektivformer), aspektpar og eksempler fra kurset.
+  - ⭐ Lagrede ord kommer i repetisjonen.
+  - Data fra OpenRussian.org (CC-BY-SA 4.0). Bygges med `python tools/build-dictionary.py --src <openrussian-mappe>`.
 - 🃏 **Repetisjon** av ordene med spaced repetition (forenklet SM-2)
 - 🔤 **Alfabet** med alle 33 kyrilliske bokstaver, «falske venner» og lyd
 - ⌨️ **Tastaturtrener** for russisk ЙЦУКЕН-oppsett (samme som russisk mobiltastatur). Trykk tastene på skjermen
@@ -67,7 +73,7 @@ De seks siste bygger på [Hallmark](https://github.com/Nutlope/hallmark) (MIT). 
 
 ## Mobil først
 Appen er laget for mobil og styres bare med trykk og sveip:
-- Bunnmeny med Kart, Repetisjon, Alfabet, Tastatur og Profil.
+- Bunnmeny med Kart, Avis, Glosebok, Repetisjon og Profil. Alfabet og tastaturtrener ligger under Glosebok og Profil.
 - Leksjoner og lesetekster åpnes i fullskjerm med en fast «Fortsett»-knapp i tommelhøyde. Du kan sveipe mellom delene.
 - Riktige quizsvar går automatisk videre. Ved feil svar glir et ark opp med fasit og en stor «Fortsett»-knapp.
 - Ordrekkefølge sjekkes av seg selv når alle ord er brukt, og et valgt ord fjernes med ett trykk.
@@ -83,6 +89,8 @@ Svar kan skrives med kyrillisk eller latinske bokstaver (`privet`, `spasibo`).
 | `js/data/stress.js` | Trykkordbok for A1–A2-teksten |
 | `js/data/audio.js` | Oversikt over lydfiler i `audio/` (genererte stemmer eller opptak fra studioet) |
 | `js/extra.js` | Lesetekst, tastaturtrener, opptaksstudio, fri AI-prat |
+| `js/dict.js`, `data/dict.json` | Glosebok, ordkort og avis |
+| `js/data/news.js` | Avissaker |
 | `js/core.js` | Lagring, translitterasjon, svarvurdering, XP/nivå/streak, merker, SRS |
 | `js/speech.js` | Web Speech API (opplesning + talegjenkjenning ru-RU) |
 | `js/ui.js` | Alle visninger |

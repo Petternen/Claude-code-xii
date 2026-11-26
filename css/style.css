@@ -703,3 +703,64 @@ body.immersive #tabbar { display: none; }
 .gate { margin: 10px 4px 14px; padding: 10px 14px; border: 2px dashed var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink); text-align: center; font-size: .95rem; }
 .gate .bar { margin: 8px auto 4px; max-width: 260px; }
 .gate small { color: var(--muted); }
+
+/* ---------- Glosebok og Avis ---------- */
+.dict, .news { padding: 8px 4px 24px; }
+.dict h1, .news h1 { margin: 6px 0 10px; }
+.dict h2 { font-size: 1.05rem; margin: 18px 0 6px; }
+.dict h3 { font-size: 1rem; margin: 16px 0 6px; }
+.btn.small { padding: .35rem .7rem; font-size: .9rem; min-height: 0; }
+.chip { border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 999px; padding: .25rem .7rem; margin: 2px; font: inherit; font-size: .9rem; }
+.dsearch { width: 100%; box-sizing: border-box; font: inherit; font-size: 1.1rem; padding: .8rem 1rem; border-radius: var(--radius); border: 2px solid var(--line); background: var(--paper); color: var(--ink); }
+.drow { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; padding: 10px 6px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.drow b { font-size: 1.15rem; grid-row: span 2; align-self: center; }
+.drow small { color: var(--muted); }
+.entry .ent-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.entry .ent-head h1 { margin: 0; font-size: 2rem; flex: 1 1 auto; }
+.ent-pos { color: var(--muted); margin: 4px 0; }
+.ent-no { font-size: 1.25rem; font-weight: 700; margin: 6px 0; }
+.dtab { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 1rem; }
+.dtab th, .dtab td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.dtab th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+.dtab.adj td { font-size: .9rem; padding: 6px 4px; }
+.ex { padding-left: 1.1rem; } .ex li { margin: 8px 0; }
+
+/* Trykkbare ord */
+.w { cursor: pointer; border-radius: 4px; padding: 0 1px; -webkit-tap-highlight-color: transparent; }
+.w:active, .w.on { background: var(--gold-soft); color: #2a1a00; box-shadow: 0 0 0 2px var(--gold-soft); }
+
+/* Ordkort nederst */
+.wsheet { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .25); display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .15s; }
+.wsheet.show { opacity: 1; pointer-events: auto; }
+.ws-card { width: 100%; max-width: 560px; background: var(--paper); color: var(--ink); border-radius: 18px 18px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 24px rgba(0, 0, 0, .25); transform: translateY(20px); transition: transform .15s; }
+.wsheet.show .ws-card { transform: none; }
+.ws-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ws-form { font-size: .95rem; color: var(--muted); } .ws-form small { font-size: .85rem; }
+.ws-x { border: 0; background: none; font-size: 1.3rem; color: var(--muted); padding: 4px 8px; }
+.ws-lemma { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
+.ws-lemma b { font-size: 1.8rem; }
+.ws-pos { color: var(--muted); font-size: .9rem; }
+.ws-no { font-size: 1.2rem; font-weight: 700; margin: 8px 0; }
+.ws-alt { margin: 6px 0 10px; font-size: .9rem; }
+
+/* Avis */
+.ncard { display: flex; gap: 12px; align-items: flex-start; padding: 12px; margin: 10px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink); text-decoration: none; box-shadow: var(--shadow); }
+.ncard.read { opacity: .75; }
+.nicon { font-size: 1.8rem; line-height: 1; }
+.nbody { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nbody small { color: var(--muted); }
+.nbody b { font-size: 1.1rem; }
+.ncheck { color: var(--good); font-weight: 700; }
+.art h1 { font-size: 1.5rem; line-height: 1.3; margin: 6px 0 2px; }
+.nsub { color: var(--muted); margin: 0 0 10px; }
+.pairs { margin: 12px 0; }
+.pair { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.pair p { margin: 0; line-height: 1.5; }
+.pair .ru { font-size: 1.05rem; }
+.pair .no { color: var(--muted); font-size: .92rem; }
+.ru-only .pair { grid-template-columns: 1fr; } .ru-only .pair .no { display: none; }
+.pbtn { border: 0; background: none; padding: 0 4px 0 0; font-size: .95rem; vertical-align: baseline; }
+#tabbar .dot { position: absolute; top: -2px; right: -6px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+.dback { display: block; width: fit-content; margin: 2px 0 8px; color: var(--muted); text-decoration: none; font-weight: 600; }
+.art h1, .entry .ent-head h1, .dict h3, .dict h2 { font-family: var(--font-body); font-weight: 800; letter-spacing: 0; text-transform: none; }
+.art h1 { color: var(--ink); }

@@ -61,7 +61,7 @@ RP.judge = (inputs, step) => {
 const KEY = 'govorushka_v1';
 const DEFAULT = () => ({
   xp: 0, daily: { date: RP.today(), xp: 0 }, streak: { count: 0, last: null }, dailyGoal: 50,
-  lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 },
+  lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 }, dict: { saved: [], hist: [] }, news: {},
   stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0, chats: 0 },
   settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus', stress: true, voice: 'auto', silent: false, silentUntil: 0 }
 });
@@ -69,7 +69,7 @@ RP.load = () => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* privat modus e.l. */ }
   const d = DEFAULT();
-  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings }, kb: { ...d.kb, ...s.kb }, readings: { ...s.readings } } : d;
+  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings }, kb: { ...d.kb, ...s.kb }, readings: { ...s.readings }, dict: { ...d.dict, ...s.dict }, news: { ...s.news } } : d;
   if (RP.state.daily.date !== RP.today()) RP.state.daily = { date: RP.today(), xp: 0 };
 };
 RP.save = () => { try { localStorage.setItem(KEY, JSON.stringify(RP.state)); } catch (e) { } };

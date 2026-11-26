@@ -43,7 +43,7 @@ RP.ui = {
     const goal = Math.min(1, s.daily.xp / s.dailyGoal), C = 2 * Math.PI * 15;
     const route = location.hash.split('/')[1] || 'map';
     const nav = (r, icon, label, extra = '') => `<a href="#/${r}" class="nav ${route === r ? 'on' : ''}"><span class="ni">${icon}${extra}</span><span class="nl">${label}</span></a>`;
-    $('#tabbar').innerHTML = nav('map', '🗺️', 'Kart') + nav('review', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '') + nav('alphabet', 'Аа', 'Alfabet') + nav('keyboard', '⌨️', 'Tastatur') + nav('profile', '👤', 'Profil');
+    $('#tabbar').innerHTML = nav('map', '🗺️', 'Kart') + nav('news', '📰', 'Avis', RP.NEWS && RP.NEWS.some(n => !(RP.state.news || {})[n.id]) ? '<span class="dot"></span>' : '') + nav('dict', '📕', 'Glosebok') + nav('review', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '') + nav('profile', '👤', 'Profil');
     $('#topbar').innerHTML = `
       <a href="#/map" class="logo" title="Говорушка"><span class="matr">${RP.skin().icon}</span><span><b>${E(RP.skin().logo)}</b><small>${E(RP.skin().sub)}</small></span></a>
       <div class="hud">
@@ -687,7 +687,7 @@ RP.views.profile = {
       <ul class="diag"><li>${sp.ttsOK && sp.hasRuVoice ? '✅ Russisk opplesning tilgjengelig' : '⚠️ Ingen russisk stemme funnet – installer en russisk stemme i operativsystemet, eller bruk Chrome/Edge/Safari'}</li>
         <li>${sp.sttOK ? '✅ Talegjenkjenning støttes' : '⚠️ Talegjenkjenning støttes ikke (Firefox). Du kan skrive svarene i stedet.'}</li></ul>
       <ul class="diag"><li>🔊 Opplesning nå: <b>${E(sp.source)}</b>${RP.AUDIO && Object.keys(RP.AUDIO).length ? ` · ${Object.keys(RP.AUDIO).length} innspilte morsmålsopptak` : ''}</li></ul>
-      <div class="row"><button class="btn" data-act="testvoice">🔊 Test stemmen</button><a class="btn" href="#/studio">🎙️ Opptaksstudio for morsmålsbrukere</a></div>
+      <div class="row"><button class="btn" data-act="testvoice">🔊 Test stemmen</button><a class="btn" href="#/studio">🎙️ Opptaksstudio for morsmålsbrukere</a><a class="btn" href="#/alphabet">Аа Alfabet</a><a class="btn" href="#/keyboard">⌨️ Tastaturtrener</a></div>
       <h2>Om appen</h2>
       <p class="muted small">Temaene Werkstatt, Solstice, Garden, Hedgerow, Dusk og Vantage er basert på <a href="https://github.com/Nutlope/hallmark" target="_blank" rel="noopener">Hallmark</a> (MIT, © Hallmark contributors).
       ${RP.AUDIO && Object.keys(RP.AUDIO).length ? 'Russiske stemmer er generert med <a href="https://github.com/debpalash/VoiceStudio" target="_blank" rel="noopener">VoiceStudio</a> og modellen <a href="https://huggingface.co/k2-fsa/OmniVoice" target="_blank" rel="noopener">OmniVoice</a> (k2-fsa; vekter CC-BY-NC – kun ikke-kommersiell bruk).' : ''}</p>
