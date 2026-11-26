@@ -61,7 +61,7 @@ RP.judge = (inputs, step) => {
 const KEY = 'govorushka_v1';
 const DEFAULT = () => ({
   xp: 0, daily: { date: RP.today(), xp: 0 }, streak: { count: 0, last: null }, dailyGoal: 50,
-  lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 },
+  lessons: {}, srs: {}, badges: {}, readings: {}, kb: { best: 0, words: 0 }, dict: { saved: [], hist: [] }, news: {},
   stats: { roleplays: 0, perfect: 0, reviews: 0, goodSpeech: 0, quizCorrect: 0, chats: 0 },
   settings: { rate: 0.9, translit: true, translation: true, sound: true, unlockAll: false, skin: 'rus', stress: true, voice: 'auto', silent: false, silentUntil: 0 }
 });
@@ -69,7 +69,7 @@ RP.load = () => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* privat modus e.l. */ }
   const d = DEFAULT();
-  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings }, kb: { ...d.kb, ...s.kb }, readings: { ...s.readings } } : d;
+  RP.state = s ? { ...d, ...s, stats: { ...d.stats, ...s.stats }, settings: { ...d.settings, ...s.settings }, kb: { ...d.kb, ...s.kb }, readings: { ...s.readings }, dict: { ...d.dict, ...s.dict }, news: { ...s.news } } : d;
   if (RP.state.daily.date !== RP.today()) RP.state.daily = { date: RP.today(), xp: 0 };
 };
 RP.save = () => { try { localStorage.setItem(KEY, JSON.stringify(RP.state)); } catch (e) { } };
@@ -104,12 +104,65 @@ RP.SKINS = {
       'Киберспортсмен · E-sportsutøver', 'Легенда · Legend', 'Чемпион · Champion', '1337 · Elite']
   }
 };
+/* Temaer basert på Hallmark (github.com/Nutlope/hallmark, MIT © Hallmark contributors).
+   Fonter med latinsk-only brødtekst er byttet til tilsvarende fonter med kyrillisk. */
+const HALLMARK_TITLES = RP.SKINS.rus.titles;
+Object.assign(RP.SKINS, {
+  werkstatt: {
+    name: 'Werkstatt', icon: '📐', logo: 'Говорушка', sub: 'russisk på norsk', color: '#2b2622', hallmark: true,
+    fonts: 'family=Jost:wght@500;700&family=Golos+Text:wght@400;600;700',
+    hello: 'Урок начинается!', tagline: 'Verksted for russisk: ett grep om gangen, fra Moskva til Arktis.',
+    desc: 'Hallmark · skole og verksted: putty, blekk og primærfarger',
+    cheers: ['Верно!', 'Отлично!', 'Точно!', 'Молодец!'], titles: HALLMARK_TITLES
+  },
+  solstice: {
+    name: 'Solstice', icon: '☀️', logo: 'Говорушка', sub: 'russisk på norsk', color: '#f3e6cf', hallmark: true,
+    fonts: 'family=Yeseva+One&family=Golos+Text:wght@400;600;700',
+    hello: 'Добрый день!', tagline: 'Et russisk år i leksjons-sesonger – fra vårens Moskva til polarnatten.',
+    desc: 'Hallmark · krem, gull og en vermilion signalfarge',
+    cheers: ['Прекрасно!', 'Чудесно!', 'Браво!', 'Верно!'], titles: HALLMARK_TITLES
+  },
+  garden: {
+    name: 'Garden', icon: '🌿', logo: 'Говорушка', sub: 'russisk på norsk', color: '#203d2b', hallmark: true,
+    fonts: 'family=Vollkorn:wght@500;600&family=Manrope:wght@400;600;700',
+    hello: 'Здравствуйте!', tagline: 'La språket vokse: litt hver dag, i ditt eget tempo.',
+    desc: 'Hallmark · havrepapir, dyp grønn og bladgrønt',
+    cheers: ['Хорошо!', 'Отлично!', 'Растём!', 'Молодец!'], titles: HALLMARK_TITLES
+  },
+  hedgerow: {
+    name: 'Hedgerow', icon: '🌲', logo: 'Говорушка', sub: 'russisk på norsk', color: '#163626', hallmark: true,
+    fonts: 'family=Prata&family=Manrope:wght@400;600;700',
+    hello: 'Добро пожаловать!', tagline: 'Gjennom taiga og bjørkeskog – ett ord om gangen.',
+    desc: 'Hallmark · mørk løvgrønn, krem og chartreuse',
+    cheers: ['Отлично!', 'Прекрасно!', 'Верно!', 'Здорово!'], titles: HALLMARK_TITLES
+  },
+  dusk: {
+    name: 'Dusk', icon: '🌆', logo: 'Говорушка', sub: 'russisk på norsk', color: '#1d2130', hallmark: true,
+    fonts: 'family=Wix+Madefor+Display:wght@500;600&family=Wix+Madefor+Text:wght@400;600;700',
+    hello: 'Добрый вечер!', tagline: 'Rolig kveldsøkt: en leksjon før lyset går.',
+    desc: 'Hallmark · skifer, røkt glass og periwinkle',
+    cheers: ['Отлично!', 'Верно!', 'Прекрасно!', 'Молодец!'], titles: HALLMARK_TITLES
+  },
+  vantage: {
+    name: 'Vantage', icon: '🧭', logo: 'Говорушка', sub: 'russisk på norsk', color: '#121a20', hallmark: true,
+    fonts: 'family=Geologica:wght@300;400;600',
+    hello: 'Курс проложен.', tagline: 'Kartet over Russland, kartlagt punkt for punkt.',
+    desc: 'Hallmark · blåsvart, stål og limegrønt signal',
+    cheers: ['Найдено!', 'Точно!', 'Верно!', 'Отлично!'], titles: HALLMARK_TITLES
+  }
+});
 RP.skin = () => RP.SKINS[RP.state.settings.skin] || RP.SKINS.rus;
 RP.titles = () => RP.skin().titles;
 RP.applySkin = id => {
   if (id) { RP.state.settings.skin = id; RP.save(); }
   const k = RP.SKINS[RP.state.settings.skin] ? RP.state.settings.skin : 'rus';
   document.documentElement.dataset.skin = k;
+  // Last temaets fonter først når temaet velges (sparer data på mobil)
+  const f = RP.SKINS[k].fonts;
+  if (f && !document.getElementById('font-' + k)) {
+    const l = document.createElement('link'); l.id = 'font-' + k; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?' + f + '&display=swap'; document.head.appendChild(l);
+  }
   const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = RP.SKINS[k].color;
 };
 RP.cycleSkin = () => {
@@ -125,7 +178,7 @@ RP.levelInfo = (xp = RP.state.xp) => {
 
 RP.addXP = (n, label) => {
   if (!n) return;
-  const s = RP.state, before = RP.levelInfo().lvl;
+  const s = RP.state, before = RP.levelInfo().lvl, openBefore = RP.unlockedCount();
   if (s.daily.date !== RP.today()) s.daily = { date: RP.today(), xp: 0 };
   const wasBelow = s.daily.xp < s.dailyGoal;
   s.xp += n; s.daily.xp += n;
@@ -139,7 +192,11 @@ RP.addXP = (n, label) => {
   RP.ui && RP.ui.toastXP(n, label);
   if (wasBelow && s.daily.xp >= s.dailyGoal) RP.ui && RP.ui.toast('🎯 Dagens mål nådd!', 'gold');
   const after = RP.levelInfo().lvl;
-  if (after > before) { RP.sfx('level'); RP.ui && RP.ui.levelUp(after); }
+  if (after > before) {
+    RP.sfx('level'); RP.ui && RP.ui.levelUp(after);
+    const opened = RP.LESSONS.filter(l => RP.isUnlocked(l.id)).slice(openBefore);
+    if (opened.length && RP.ui) RP.ui.toast(`🔓 Nye leksjoner låst opp: ${opened[0].id}–${opened[opened.length - 1].id}`, 'gold');
+  }
   RP.checkBadges();
   RP.ui && RP.ui.renderTopbar();
 };
@@ -152,8 +209,23 @@ RP.SECTIONS = [
   { id: 'roleplay', no: 'Samtale', icon: '🗣️' }
 ];
 RP.prog = id => (RP.state.lessons[id] = RP.state.lessons[id] || { done: {}, stars: 0, best: 0 });
-RP.isComplete = id => { const p = RP.state.lessons[id]; return !!(p && p.done.quiz && p.done.roleplay); };
-RP.isUnlocked = id => RP.state.settings.unlockAll || id === 1 || RP.isComplete(id - 1);
+/* En leksjon er fullført når quizen er bestått. Samtalen (tale) er valgfri bonus-XP. */
+RP.isComplete = id => { const p = RP.state.lessons[id]; return !!(p && p.done.quiz); };
+/* Opplåsing etter nivå: leksjonene åpnes i grupper på fire. Alle i en åpen gruppe kan tas i valgfri rekkefølge;
+   neste gruppe krever at spilleren når et bestemt nivå (XP fra quiz, ord, lesetekster, repetisjon, tastatur …). */
+RP.TIER_SIZE = 4;
+RP.TIER_LVL = [1, 4, 6, 7, 8, 9, 10, 11]; // ≈ å fullføre de åpne leksjonene med ~75 % riktige
+RP.tierOf = id => Math.floor((id - 1) / RP.TIER_SIZE);
+RP.lessonLevel = id => RP.TIER_LVL[Math.min(RP.tierOf(id), RP.TIER_LVL.length - 1)];
+RP.xpForLevel = lvl => { let base = 0; for (let l = 1; l < lvl; l++) base += 100 + 50 * (l - 1); return base; };
+RP.xpToUnlock = id => Math.max(0, RP.xpForLevel(RP.lessonLevel(id)) - RP.state.xp);
+RP.isUnlocked = id => {
+  const p = RP.state.lessons[id];
+  return RP.state.settings.unlockAll || RP.levelInfo().lvl >= RP.lessonLevel(id)
+    || !!(p && Object.keys(p.done).length); // allerede påbegynte leksjoner låses aldri igjen
+};
+RP.unlockedCount = () => RP.LESSONS.filter(l => RP.isUnlocked(l.id)).length;
+RP.lockMsg = id => `🔒 Nå nivå ${RP.lessonLevel(id)} for å låse opp – ${RP.xpToUnlock(id)} XP igjen. Samle XP med quiz, ord, lesetekster og repetisjon.`;
 RP.markSection = (id, sec, xp) => {
   const p = RP.prog(id), first = !p.done[sec], wasComplete = RP.isComplete(id);
   p.done[sec] = true; RP.save();
@@ -161,7 +233,8 @@ RP.markSection = (id, sec, xp) => {
   if (!wasComplete && RP.isComplete(id)) {
     RP.addXP(50, 'Leksjon fullført');
     RP.sfx('level');
-    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (id < RP.LESSONS.length ? ' Neste sted er låst opp.' : ''), 'gold');
+    const nx = id + 1;
+    RP.ui && RP.ui.toast(`🏅 «${RP.lesson(id).ru}» fullført!` + (nx <= RP.LESSONS.length && !RP.isUnlocked(nx) ? ` Nivå ${RP.lessonLevel(nx)} åpner neste leksjon (${RP.xpToUnlock(nx)} XP igjen).` : ''), 'gold');
   }
 };
 

@@ -43,7 +43,7 @@ RP.ui = {
     const goal = Math.min(1, s.daily.xp / s.dailyGoal), C = 2 * Math.PI * 15;
     const route = location.hash.split('/')[1] || 'map';
     const nav = (r, icon, label, extra = '') => `<a href="#/${r}" class="nav ${route === r ? 'on' : ''}"><span class="ni">${icon}${extra}</span><span class="nl">${label}</span></a>`;
-    $('#tabbar').innerHTML = nav('map', '🗺️', 'Kart') + nav('review', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '') + nav('alphabet', 'Аа', 'Alfabet') + nav('keyboard', '⌨️', 'Tastatur') + nav('profile', '👤', 'Profil');
+    $('#tabbar').innerHTML = nav('map', '🗺️', 'Kart') + nav('news', '📰', 'Avis', RP.NEWS && RP.NEWS.some(n => !(RP.state.news || {})[n.id]) ? '<span class="dot"></span>' : '') + nav('dict', '📕', 'Glosebok') + nav('review', '🃏', 'Repetisjon', due ? `<span class="pill">${due}</span>` : '') + nav('profile', '👤', 'Profil');
     $('#topbar').innerHTML = `
       <a href="#/map" class="logo" title="Говорушка"><span class="matr">${RP.skin().icon}</span><span><b>${E(RP.skin().logo)}</b><small>${E(RP.skin().sub)}</small></span></a>
       <div class="hud">
@@ -90,6 +90,12 @@ RP.views.map = {
       const lvl = r.from >= 21 ? 'B1' : r.from >= 13 ? 'A2' : 'A1';
       html += `<section class="region" style="--rc:${r.color}"><header class="region-head"><h2>${E(r.ru)}</h2><span>${E(r.no)} · ${lvl} · ${done}/${ls.length}</span></header><div class="path">`;
       ls.forEach((l, i) => {
+        if (!RP.isUnlocked(l.id) && (l.id - 1) % RP.TIER_SIZE === 0) { // låsebanner før hver låst gruppe
+          const lv = RP.lessonLevel(l.id), have = RP.state.xp, from = RP.xpForLevel(lv - 1), to = RP.xpForLevel(lv);
+          const pct = Math.max(0, Math.min(100, Math.round((have - from) / (to - from) * 100)));
+          html += `<div class="gate"><b>🔒 Nivå ${lv}</b> låser opp leksjon ${l.id}–${Math.min(l.id + RP.TIER_SIZE - 1, RP.LESSONS.length)}
+            <div class="bar"><i style="width:${have >= from ? pct : 0}%"></i></div><small>${RP.xpToUnlock(l.id)} XP igjen</small></div>`;
+        }
         const p = RP.state.lessons[l.id], unlocked = RP.isUnlocked(l.id), complete = RP.isComplete(l.id);
         const stars = p ? p.stars : 0;
         const cls = [unlocked ? '' : 'locked', complete ? 'done' : '', l.id === firstOpen ? 'current' : '', l.boss ? 'boss' : ''].join(' ');
@@ -123,14 +129,14 @@ RP.views.map = {
       if (!ns[j].classList.contains('locked')) { RP.mapSel = ns[j].dataset.key; this.mark(); this.scroll(); RP.sfx('click'); return; }
       if (ns[j].dataset.key.startsWith('L')) break;
     }
-    RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp');
+    RP.ui.toast('🔒 Samle mer XP for å låse opp flere leksjoner');
   },
   act(a, el) {
     if (a !== 'open') return;
     const k = el.dataset.key;
     if (k.startsWith('L')) {
       const id = +k.slice(1);
-      if (!RP.isUnlocked(id)) { RP.ui.toast('🔒 Fullfør forrige leksjon for å låse opp'); RP.sfx('bad'); return; }
+      if (!RP.isUnlocked(id)) { RP.ui.toast(RP.lockMsg(id)); RP.sfx('bad'); return; }
       RP.mapSel = k; RP.mapKeep = true; location.hash = `#/lesson/${id}/dialog`;
     } else {
       const rd = RP.READINGS.find(x => x.id === k);
@@ -145,7 +151,8 @@ RP.views.lesson = {
   render([id, sec = 'dialog']) {
     const L = RP.lesson(id);
     if (!L) { location.hash = '#/map'; return; }
-    if (!RP.isUnlocked(L.id)) { RP.ui.toast('🔒 Leksjonen er låst'); location.hash = '#/map'; return; }
+    if (!RP.isUnlocked(L.id)) { RP.ui.toast(RP.lockMsg(L.id)); location.hash = '#/map'; return; }
+    RP.speech.prefetch(L);
     this.L = L; this.sec = RP.SECTIONS.find(s => s.id === sec) || (sec === 'chat' && RP.ai) ? sec : 'dialog';
     const p = RP.prog(L.id);
     $('#main').innerHTML = `<article class="lesson">
@@ -409,7 +416,9 @@ RP.sections.quiz = {
       <p class="big">${this.correct} av ${n} riktige (${pct} %)</p>
       <p>Lengste combo: 🔥 ${this.maxCombo}</p>
       ${stars ? '' : '<p class="warn">Du trenger minst 60 % for å bestå quizen. Prøv igjen!</p>'}
-      <div class="row stack"><button class="btn primary big" data-act="tonext">${stars ? 'Til samtalen →' : 'Repeter dialogen'}</button>
+      ${stars ? '<p class="muted">Leksjonen er fullført. Samtalen er valgfri og gir bonus-XP.</p>' : ''}
+      <div class="row stack"><button class="btn primary big" data-act="tonext">${stars ? 'Til samtalen (bonus) →' : 'Repeter dialogen'}</button>
+      ${stars ? `<button class="btn" data-act="skiprp">${this.nextOpen() ? 'Hopp over · neste leksjon →' : 'Hopp over · til kartet'}</button>` : ''}
       <button class="btn" data-act="retry">↻ Ta quizen igjen</button></div></div>`;
     this.done = true; this.passed = !!stars;
   },
@@ -428,7 +437,9 @@ RP.sections.quiz = {
     if (a === 'cont') this.next();
     if (a === 'retry') { this.done = false; this.render(this.L); }
     if (a === 'tonext') location.hash = `#/lesson/${this.L.id}/${this.passed ? 'roleplay' : 'dialog'}`;
+    if (a === 'skiprp') { const n = this.nextOpen(); if (n) RP.mapSel = 'L' + n; location.hash = n ? `#/lesson/${n}/dialog` : '#/map'; }
   },
+  nextOpen() { const n = this.L.id + 1; return n <= RP.LESSONS.length && RP.isUnlocked(n) ? n : 0; },
   cleanup() { this.done = false; clearTimeout(this.auto); }
 };
 
@@ -440,19 +451,20 @@ RP.sections.roleplay = {
     $('#sec').innerHTML = `<div class="rp">
       <div class="rp-intro ornament"><div class="avatar big g-${genderOf(bot)}">${E(bot[0])}</div>
         <div><h2>Samtale med ${E(bot)}</h2><p>${E(this.rp.intro)}</p>
-        ${RP.silent() ? '<p class="muted small">🔇 Lydfri modus: les replikkene og skriv svarene.</p>' : ''}
-        <p class="muted small">Svar muntlig med mikrofonen ${RP.speech.sttOK ? '' : '(ikke støttet i denne nettleseren – skriv i stedet)'} eller skriv svaret. Trenger du hjelp, trykk 💡 Hint.</p>
+        <p class="muted small">Trykk på riktig svar.${RP.silent() ? '' : RP.speech.sttOK ? ' Vil du øve uttale, kan du også si det med 🎤.' : ''} Du kan også skrive svaret selv. Verken lyd eller mikrofon er nødvendig.</p>
         <button class="btn primary big" data-act="start">▶ Start samtalen</button></div></div>
       <div class="chat" id="chat"></div>
       <div class="rp-controls" id="rpc" hidden>
         <div class="hintbox" id="hint"></div>
-        <div class="row">
-          ${RP.speech.sttOK ? `<button class="mic" data-act="mic" id="mic" title="Snakk">🎤</button>` : ''}
-          <form id="rpform" class="qform"><input id="rpin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="…eller skriv svaret her"><button class="btn">Send</button></form>
-        </div>
-        <div class="row small-btns">
+        <div class="choices" id="choices"></div>
+        <div class="row alt-input">
+          ${RP.speech.sttOK && !RP.silent() ? `<button class="mic small" data-act="mic" id="mic" title="Si svaret">🎤</button>` : ''}
+          <button class="btn ghost" data-act="typemode">⌨️ Skriv selv</button>
           <button class="btn ghost" data-act="hint">💡 Hint</button>
-          <button class="btn ghost" data-act="again">🔊 Hør igjen</button>
+        </div>
+        <form id="rpform" class="qform" hidden><input id="rpin" class="answer" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" placeholder="Skriv svaret (kyrillisk eller latinsk)"><button class="btn">Send</button></form>
+        <div class="row small-btns">
+          ${RP.silent() ? '' : '<button class="btn ghost" data-act="again">🔊 Hør igjen</button>'}
           <button class="btn ghost" data-act="trans">🇳🇴 Oversett</button>
           <button class="btn ghost" data-act="skip">⏭ Hopp over</button>
         </div>
@@ -468,9 +480,26 @@ RP.sections.roleplay = {
     this.step++; this.hint = 0; this.tries = 0; $('#hint').innerHTML = '';
     if (this.step >= this.rp.steps.length) return this.end();
     const s = this.rp.steps[this.step];
-    this.bubble('bot', `<div class="ru">${R(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
+    const bb = this.bubble('bot', `<div class="ru">${R(s.b)}</div>${tr(s.b)}<div class="no" hidden>${E(s.bn)}</div>`);
     $('#rpc').hidden = false; $('#rpin').value = '';
+    this.drawChoices(s);
+    bb.scrollIntoView({ block: 'start', behavior: 'smooth' });
     await say(s.b, { gender: genderOf(this.rp.bot), auto: true });
+  },
+  /* Trykkbare svaralternativer: fasit + to replikker fra kurset som IKKE godkjennes for dette trinnet. */
+  drawChoices(s) {
+    const own = this.rp.steps.filter(x => x !== s).map(x => x.m);
+    const all = RP.LESSONS.flatMap(l => l.rp.steps.map(x => x.m));
+    const pool = [...new Set(RP.shuffle(own).concat(RP.shuffle(all)))].filter(m => RP.normalize(m) !== RP.normalize(s.m) && !RP.judge([m], s).pass);
+    this.choices = RP.shuffle([s.m, ...pool.slice(0, 2)]);
+    $('#choices').innerHTML = this.choices.map((c, k) => `<button class="choice" data-act="choose" data-k="${k}"><b>${R(c)}</b>${tr(c)}</button>`).join('');
+  },
+  choose(k, el) {
+    if (this.busy || this.ended || this.step < 0 || el.disabled) return;
+    const s = this.rp.steps[this.step], text = this.choices[k], ok = RP.judge([text], s).pass;
+    el.disabled = true; el.classList.add(ok ? 'right' : 'wrong');
+    if (ok) $$('#choices .choice').forEach(b => { b.disabled = true; });
+    this.answer([RP.unstress(text)]);
   },
   async mic() {
     if (this.busy || this.ended || this.step < 0) return;
@@ -523,16 +552,16 @@ RP.sections.roleplay = {
     const d = document.createElement('div'); d.className = 'result ornament';
     d.innerHTML = `<h2>${ok ? 'Samtale fullført!' : 'Nesten!'}</h2><p class="big">${this.passed}/${n} svar klarte du selv</p>
       ${this.skipped ? `<p class="muted">Hoppet over: ${this.skipped}</p>` : ''}
-      ${!ok ? '<p class="warn">Klar minst halvparten av replikkene selv for å fullføre samtalen.</p>' : ''}
-      ${ok && !RP.prog(this.L.id).done.quiz ? '<p class="warn">Bestå quizen også for å fullføre leksjonen.</p>' : ''}
+      ${!ok ? '<p class="warn">Klar minst halvparten av replikkene selv for å få bonus-XP. Samtalen er valgfri.</p>' : ''}
+      ${!RP.prog(this.L.id).done.quiz ? '<p class="warn">Bestå quizen for å fullføre leksjonen.</p>' : ''}
       <div class="row stack"><button class="btn primary big" data-act="finish">${next ? 'Neste leksjon →' : 'Til kartet'}</button>
       <button class="btn" data-act="restart">↻ Spill igjen</button></div>`;
     $('#chat').appendChild(d); d.scrollIntoView({ behavior: 'smooth' });
     if (ok) RP.ui.confetti();
     say(ok ? 'Было приятно поговорить! До встречи!' : 'Давай попробуем ещё раз!', { gender: genderOf(this.rp.bot), auto: true });
   },
-  act(a) {
-    if (a === 'start') { $('.rp-intro button').remove(); this.nextStep(); }
+  act(a, el) {
+    if (a === 'start') { $('.rp').classList.add('started'); this.nextStep(); }
     if (a === 'mic') this.mic();
     if (a === 'send') this.send();
     if (a === 'hint') this.showHint();
@@ -540,6 +569,8 @@ RP.sections.roleplay = {
     if (a === 'again') { const s = this.rp.steps[this.step]; s && say(s.b, { gender: genderOf(this.rp.bot) }); }
     if (a === 'trans') { const n = $$('#chat .msg.bot .no'); n.length && (n[n.length - 1].hidden = !n[n.length - 1].hidden); }
     if (a === 'skip') this.skip();
+    if (a === 'choose') this.choose(+el.dataset.k, el);
+    if (a === 'typemode') { const f = $('#rpform'); f.hidden = !f.hidden; if (!f.hidden) $('#rpin').focus(); }
     if (a === 'restart') this.render(this.L);
     if (a === 'finish') {
       const next = this.L.id < RP.LESSONS.length && RP.isUnlocked(this.L.id + 1);
@@ -656,7 +687,10 @@ RP.views.profile = {
       <ul class="diag"><li>${sp.ttsOK && sp.hasRuVoice ? '✅ Russisk opplesning tilgjengelig' : '⚠️ Ingen russisk stemme funnet – installer en russisk stemme i operativsystemet, eller bruk Chrome/Edge/Safari'}</li>
         <li>${sp.sttOK ? '✅ Talegjenkjenning støttes' : '⚠️ Talegjenkjenning støttes ikke (Firefox). Du kan skrive svarene i stedet.'}</li></ul>
       <ul class="diag"><li>🔊 Opplesning nå: <b>${E(sp.source)}</b>${RP.AUDIO && Object.keys(RP.AUDIO).length ? ` · ${Object.keys(RP.AUDIO).length} innspilte morsmålsopptak` : ''}</li></ul>
-      <div class="row"><button class="btn" data-act="testvoice">🔊 Test stemmen</button><a class="btn" href="#/studio">🎙️ Opptaksstudio for morsmålsbrukere</a></div>
+      <div class="row"><button class="btn" data-act="testvoice">🔊 Test stemmen</button><a class="btn" href="#/studio">🎙️ Opptaksstudio for morsmålsbrukere</a><a class="btn" href="#/alphabet">Аа Alfabet</a><a class="btn" href="#/keyboard">⌨️ Tastaturtrener</a></div>
+      <h2>Om appen</h2>
+      <p class="muted small">Temaene Werkstatt, Solstice, Garden, Hedgerow, Dusk og Vantage er basert på <a href="https://github.com/Nutlope/hallmark" target="_blank" rel="noopener">Hallmark</a> (MIT, © Hallmark contributors).
+      ${RP.AUDIO && Object.keys(RP.AUDIO).length ? 'Russiske stemmer er generert med <a href="https://github.com/debpalash/VoiceStudio" target="_blank" rel="noopener">VoiceStudio</a> og modellen <a href="https://huggingface.co/k2-fsa/OmniVoice" target="_blank" rel="noopener">OmniVoice</a> (k2-fsa; vekter CC-BY-NC – kun ikke-kommersiell bruk).' : ''}</p>
       <h2>Fremdrift</h2>
       <p class="muted">Alt lagres lokalt i nettleseren. Ta sikkerhetskopi eller flytt til en annen enhet:</p>
       <div class="row"><button class="btn" data-act="export">⬇ Eksporter</button>

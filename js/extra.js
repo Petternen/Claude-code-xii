@@ -13,6 +13,7 @@
     render([id]) {
       const r = (RP.READINGS || []).find(x => x.id === id);
       if (!r || !RP.readingUnlocked(r)) { location.hash = '#/map'; return; }
+      RP.speech.prefetch(r);
       this.r = r; this.sel = 0; this.phase = 'read'; this.showNo = false; this.token = 0;
       q('#main').innerHTML = `<article class="reading-page">
         <header class="lesson-head ornament"><a class="back" href="#/map" aria-label="Lukk">✕</a><div class="lh-icon">${r.icon}</div>
@@ -238,7 +239,7 @@
     },
     async exportZip() {
       const keys = [...this.rec]; if (!keys.length) { RP.ui.toast('Ingen nye opptak å eksportere'); return; }
-      const files = [], map = { ...(RP.AUDIO || {}) };
+      const files = [], map = Object.fromEntries(Object.entries(RP.AUDIO || {}).filter(([, v]) => !String(v).startsWith('pack:')));
       for (const k of keys) {
         const b = await idb.get(k); if (!b) continue;
         const ext = /mp4|m4a|aac/.test(b.type) ? 'm4a' : /ogg/.test(b.type) ? 'ogg' : 'webm';
